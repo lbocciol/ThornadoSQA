@@ -1,4 +1,4 @@
-# ThornadoSQA This code couples standard neutrino transport (Thornado) with single-angle collective oscillations (SQA)
+# ThornadoSQA
 
 - ImplicitSolverModule is where the implicit step is carried out. It's a simple backward Euler that only includes Emission and Absorption
 - InitializationModule is where Fields, Radiation and Oscillations are initialized.
