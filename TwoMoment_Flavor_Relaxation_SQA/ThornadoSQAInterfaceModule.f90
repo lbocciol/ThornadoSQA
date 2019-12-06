@@ -20,6 +20,8 @@ MODULE ThornadoSQAInterfaceModule
     NodeCoordinate
   USE UtilitiesModule, ONLY: &
     NodeNumber
+  USE ReferenceElementModuleX, ONLY: & 
+    NodeNumberTableX
   USE NeutrinoOpacitiesComputationModule, ONLY: &
     ComputeNeutrinoOpacities_EC_Points
   USE NeutrinoOpacitiesModule, ONLY: &
@@ -83,12 +85,12 @@ CONTAINS
     LOGICAL :: DoOscillations
     LOGICAL :: InitializeFirstZone
 
-    INTEGER  :: iX, iX1, iX2, iX3, iNodeX
+    INTEGER  :: iN_X, iX1, iX2, iX3, iNodeX, iNodeX1
 
     REAL(DP) :: tmax
     REAL(DP) :: R,dr
     
-    INTEGER  :: iPF, iAF, iS, iN_X
+    INTEGER  :: iPF, iAF, iS
     REAL(DP) :: Chi_Temp(nE_G, nX_G, nSpecies)
     REAL(DP) :: Eta(nE_G, nX_G, nSpecies)
     REAL(DP) :: Chi(nE_G, nX_G, nSpecies)
@@ -99,69 +101,76 @@ CONTAINS
 
     dt_loc = 1.0d-13 !Seconds
     CALL ResetSmatrix
-    
-    DO iX = 1,nX_G
+   
+    iN_X = 0
 
-      IF ( iX == nX_G ) CONTINUE
-
-      iX3    = MOD( (iX-1) / ( nDOFX * nX(1) * nX(2) ), nX(3) ) + iX_B0(3)
-      iX2    = MOD( (iX-1) / ( nDOFX * nX(1)         ), nX(2) ) + iX_B0(2)
-      iX1    = MOD( (iX-1) / ( nDOFX                 ), nX(1) ) + iX_B0(1)
-      iNodeX = MOD( (iX-1)                            , nDOFX ) + 1
-
-      R = NodeCoordinate( MeshX(1), iX1, iNodeX )
-        
-      ! FOR 1D ONLY. FIND FIRST ZONE WHERE YOU WANT TO 
-      ! START YOUR CALCULATIONS (E.G. 10 KM OUTSIDE
-      ! NEUTRINOSPHERE      
-      IF ( R / Kilometer > 50.0d0 .AND. .NOT. DoOscillations ) THEN
-
-        DoOscillations = .TRUE.
-
-      END IF
-
-      IF ( R > R_Shock ) THEN
-
-        DoOscillations = .FALSE.
-
-      END IF
-
-      IF ( DoOscillations ) THEN
-
-        IF ( InitializeFirstZone ) THEN
-
-          CALL InitializefMatrixOsc( iNodeX,iX1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
-
-          InitializeFirstZone = .FALSE.
-
-        ELSE
-
-          ! iX1-1 because you initialize fMatrixOsc by getting the 
-          ! spectrum coming from the previous zone
-          CALL InitializefMatrixOsc( iNodeX,iX1-1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
-
-        END IF
-
-        ! --- These are two different ways of defining dr, not 
-        ! --- sure which is the best
-
-        dr = ( NodeCoordinate( MeshX(1), iX1+1, iNodeX ) &
-             - NodeCoordinate( MeshX(1), iX1,   iNodeX ) ) / Centimeter
-        dr = MeshX(1) % Width(iX1) / nNodesX(1) / Centimeter
-
-        tmax = dr / SpeedOfLightCGS
-        
-        CALL OscillationsDriver( tmax, &
-           uPF(iNodeX,iX1,iX2,iX3,iPF_D ), &
-           uAF(iNodeX,iX1,iX2,iX3,iAF_Ye) )
-
-        CALL CalculateOpacitiesOsc( dr, iX, iNodeX, iX1, iX2, iX3, &
-                    ABS( SMatrixTotal(:,:,1,1) )**2, nM, nE_G )
-        
-        WRITE(*,'(A16,4i4)') 'Done with Zone:',iNodeX,iX1,iX2,iX3
-
-      END IF
+    DO iX1 = iX_B0(1),iX_E0(1)
+    DO iX2 = iX_B0(2),iX_E0(2)
+    DO iX3 = iX_B0(3),iX_E0(3)
       
+      DO iNodeX = 1,nDOFX
+        
+        iN_X = iN_X + 1
+        iNodeX1 = NodeNumberTableX(1,iNodeX)
+
+        IF ( iN_X == nX_G ) CONTINUE
+  
+        R = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
+        
+        ! FOR 1D ONLY. FIND FIRST ZONE WHERE YOU WANT TO 
+        ! START YOUR CALCULATIONS (E.G. 10 KM OUTSIDE
+        ! NEUTRINOSPHERE      
+        IF ( R / Kilometer > 50.0_DP .AND. .NOT. DoOscillations ) THEN
+  
+          DoOscillations = .TRUE.
+  
+        END IF
+  
+        IF ( R > R_Shock ) THEN
+  
+          DoOscillations = .FALSE.
+  
+        END IF
+  
+        IF ( DoOscillations ) THEN
+  
+          IF ( InitializeFirstZone ) THEN
+            
+            CALL InitializefMatrixOsc( iNodeX,iX1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
+  
+            InitializeFirstZone = .FALSE.
+  
+          ELSE
+  
+            ! iX1-1 because you initialize fMatrixOsc by getting the 
+            ! spectrum coming from the previous zone
+            CALL InitializefMatrixOsc( iNodeX,iX1-1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
+  
+          END IF
+  
+          ! --- These are two different ways of defining dr, not 
+          ! --- sure which is the best
+          
+          dr = ( NodeCoordinate( MeshX(1), iX1+1, iNodeX1 ) &
+               - NodeCoordinate( MeshX(1), iX1,   iNodeX1 ) ) / Centimeter
+          dr = MeshX(1) % Width(iX1) / nNodesX(1) / Centimeter
+  
+          tmax = dr / SpeedOfLightCGS
+          
+          CALL OscillationsDriver( tmax, &
+             uPF(iNodeX,iX1,iX2,iX3,iPF_D ), &
+             uAF(iNodeX,iX1,iX2,iX3,iAF_Ye) )
+  
+          CALL CalculateOpacitiesOsc( dr, iN_X, iNodeX1, iX1, iX2, iX3, &
+                      ABS( SMatrixTotal(:,:,1,1) )**2, nM, nE_G )
+          
+          WRITE(*,'(A16,4i4)') 'Done with Zone:',iNodeX1,iX1,iX2,iX3
+  
+        END IF
+       
+      END DO
+    END DO
+    END DO
     END DO
 
     CALL WriteOpacitiesOsc
@@ -173,7 +182,7 @@ CONTAINS
         iX3    = MOD( (iN_X-1) / ( nDOFX * nX(1) * nX(2) ), nX(3) ) + iX_B0(3)
         iX2    = MOD( (iN_X-1) / ( nDOFX * nX(1)         ), nX(2) ) + iX_B0(2)
         iX1    = MOD( (iN_X-1) / ( nDOFX                 ), nX(1) ) + iX_B0(1)
-        iNodeX = MOD( (iN_X-1)                            , nDOFX ) + 1
+        iNodeX = MOD( (iN_X-1)               , nDOFX ) + 1
 
         PF_N(iN_X,iPF) = uPF(iNodeX,iX1,iX2,iX3,iPF)
       END DO
@@ -334,7 +343,7 @@ CONTAINS
     COMPLEX(KIND=8), INTENT(IN) :: STotal(nMi,nEi,nFi,nFi)
 
     INTEGER  :: iS, m, iE, iN_E
-    INTEGER  :: iNodeE, iNode
+    INTEGER  :: iNodeE, iNode, iNodeX1
 
     REAL(DP) :: fPinched(nM,nE_G,nF,nF)
     REAL(DP) :: AvgE(nSpecies), AvgE2(nSpecies), Norm(nSpecies)
@@ -342,10 +351,10 @@ CONTAINS
     REAL(DP) :: alpha(nSpecies)
     REAL(DP) :: f_loc
     REAL(DP) :: Mnu, kT
-    CHARACTER(2) :: FileNUmber
+    CHARACTER(3) :: FileNUmber
 
     iN_E = 0
-
+    
     DO iE = iE_B0, iE_E0
 
       DO iNodeE = 1,nNodesE
@@ -408,7 +417,7 @@ CONTAINS
       IF( iS .EQ. iNuE )THEN
 
         Mnu = + ( uAF(iNodeX,iX1,iX2,iX3,iAF_Me) &
-                    + uAF(iNOdeX,iX1,iX2,iX3,iAF_Mp) &
+                    + uAF(iNodeX,iX1,iX2,iX3,iAF_Mp) &
                     - uAF(iNodeX,iX1,iX2,iX3,iAF_Mn) )
 
       ELSE IF( iS .EQ. iNuE_Bar )THEN
@@ -441,21 +450,23 @@ CONTAINS
 
     END DO
     
+!    iNodeX1 = NodeNumberTableX(1,iNodeX)
+!    
 !    DO iN_E = 1,nE_G
-!        WRITE(FileNUmber,'(I2.2)') iN_E
+!        WRITE(FileNUmber,'(I3.3)') iN_E
 !        OPEN(UNIT=666,FILE='pinch' // FileNumber, STATUS='unknown', &
 !            FORM = 'formatted', POSITION='append')
 !        OPEN(UNIT=777,FILE='psi' // FileNumber, STATUS='unknown', &
 !            FORM = 'formatted', POSITION='append')
 ! 
-!        WRITE(666,'(10ES22.11E3)') MeshX(1) % Center(iX1) / Kilometer, Energies(iN_E) / MeV, &
+!        WRITE(666,'(10ES22.11E3)') NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer, Energies(iN_E) / MeV, &
 !                             fPinched(1,iN_E,1,1), &
 !                             fPinched(2,iN_E,1,1), &
 !                             fPinched(1,iN_E,2,2), &
 !                             fPinched(2,iN_E,2,2), &
 !                             alpha(1),alpha(2),alpha(3),alpha(4)
 !        
-!         WRITE(777,'(6ES22.11E3)') MeshX(1) % Center(iX1) / Kilometer, Energies(iN_E) / MeV, &
+!         WRITE(777,'(6ES22.11E3)') NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer, Energies(iN_E) / MeV, &
 !                             Psi0_loc(iN_E,1), &
 !                             Psi0_loc(iN_E,2), &
 !                             Psi0_loc(iN_E,3), &
@@ -512,14 +523,14 @@ CONTAINS
   END SUBROUTINE ResetSMatrix
 
 
-  SUBROUTINE CalculateOpacitiesOsc( ZoneWidth, iN_X, iNodeX, iX1, iX2, iX3, &
+  SUBROUTINE CalculateOpacitiesOsc( ZoneWidth, iN_X, iNodeX1, iX1, iX2, iX3, &
                     See2, nMi, nEi )
 
     INTEGER,  INTENT(IN) :: nMi, nEi
     REAL(DP), INTENT(IN) :: See2(nMi, nEi)
     
     REAL(DP), INTENT(IN) :: ZoneWidth
-    INTEGER,  INTENT(IN) :: iN_X, iNodeX, iX1, iX2, iX3
+    INTEGER,  INTENT(IN) :: iN_X, iNodeX1, iX1, iX2, iX3
     
     REAL(DP) :: TransProb(nE_G)
     INTEGER  :: iE, iN_E, m, iNode, iNodeE, iS, iCR
@@ -542,7 +553,7 @@ CONTAINS
     DO iE = iE_B0,iE_E0
       DO iNodeE = 1,nNodesE
         
-        iNode = NodeNumber(iNodeE, iNodeX, 1, 1 )
+        iNode = NodeNumber(iNodeE, iNodeX1, 1, 1 )
         iN_E = iN_E + 1
 
         DO iCR = 1,nCR
@@ -577,8 +588,12 @@ CONTAINS
 
     INTEGER,  INTENT(IN)  :: iX1, iX2, iX3, iNodeX
     REAL(DP), INTENT(OUT) :: R, dR, Ye, Rho
+    
+    INTEGER :: iNodeX1
 
-    R   = NodeCoordinate( MeshX(1), iX1, iNodeX )
+    iNodeX1 = NodeNumberTableX(1,iNodeX) 
+    
+    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
     dR  = MeshX(1) % Width(iX1) 
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
