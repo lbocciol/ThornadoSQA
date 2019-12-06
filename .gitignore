@@ -9,6 +9,7 @@ Executables/_*
 Output/*
 TwoMoment_Flavor_Relaxation_SQA/Output/*
 TwoMoment_Flavor_Relaxation_SQA/Executables/*.mod
+TwoMoment_Flavor_Relaxation_SQA/Executables/Relaxation_SQA*
 TwoMoment_Flavor_Relaxation_SQA/Executables/*.o
 TwoMoment_Flavor_Relaxation_SQA/Executables/CHIMERA
 TwoMoment_Flavor_Relaxation_SQA/Executables/*.h5
