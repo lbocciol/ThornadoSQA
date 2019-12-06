@@ -1,0 +1,14 @@
+Executables/*.so
+Executables/*.mod
+Executables/*.o
+Executables/*.f90
+Executables/CHIMERA
+Executables/*.h5
+Executables/.f2py_f2cmap
+Executables/_*
+Output/*
+TwoMoment_Flavor_Relaxation_SQA/Output/*
+TwoMoment_Flavor_Relaxation_SQA/Executables/*.mod
+TwoMoment_Flavor_Relaxation_SQA/Executables/*.o
+TwoMoment_Flavor_Relaxation_SQA/Executables/CHIMERA
+TwoMoment_Flavor_Relaxation_SQA/Executables/*.h5
