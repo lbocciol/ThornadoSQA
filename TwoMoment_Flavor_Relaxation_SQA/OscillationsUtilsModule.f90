@@ -4,12 +4,13 @@ MODULE OscillationsUtilsModule
     DP, Zero, Half, One, &
     Two, Pi, TwoPi
   USE InitializationModule, ONLY: &
-    Enu, nY, AV, CV, &
+    Enu, Rnu, nY, AV, CV, &
     CofactorMatrix
 
   IMPLICIT NONE
   PRIVATE
 
+  PUBLIC :: CSI
   PUBLIC :: B, W
   PUBLIC :: JInverse
   PUBLIC :: Eigenvalues, EigenvectorMatrix
@@ -18,8 +19,47 @@ MODULE OscillationsUtilsModule
   ! signs of Eigenvalues of vacuum Hamiltonian (switch them IF dm21<0)
   REAL(DP), PARAMETER :: a1 = - One
   REAL(DP), PARAMETER :: a2 = + One
+  REAL(DP), PARAMETER :: RSNS = 0.0_DP !Schwarzchild radius of neutron star  
 
 CONTAINS
+
+  FUNCTION CSI( R ) RESULT( GeomFactor )
+    
+    ! CSI is the geometrical factor as in the review Duan (2016) 
+    REAL(DP), INTENT(IN) :: R
+    REAL(DP) :: y
+    REAL(DP) :: GeomFactor
+
+    ! This does not include GR effects
+    y = R / Rnu
+    
+    GeomFactor = 0.5_DP * ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) )**2
+
+  END FUNCTION CSI
+
+  FUNCTION dtaudr( R ) RESULT( dtaudr_out )
+    
+    REAL(DP), INTENT(IN) :: R
+
+    REAL(DP) :: sinthetaR, costheta
+    REAL(DP) :: dtaudr_out
+
+    sinthetaR = 0.0_DP ! sine of emission angle of test neutrino at neutrinosphere
+    costheta  = SQRT( 1.0_DP - Rnu*sinthetaR/R * SQRT(BS(r)/BS(Rnu)) ) * &
+                SQRT( 1.0_DP + Rnu*sinthetaR/R * SQRT(BS(r)/BS(Rnu)) )
+
+    dtaudr_out = 1.0_DP / ( costheta * SQRT(BS(R)) )
+    
+  END FUNCTION dtaudr
+
+  FUNCTION BS( R ) RESULT( BS_out )
+
+    REAL(DP), INTENT(IN) :: R
+    REAL(DP) :: BS_out
+
+    BS_out = 1.0_DP - RSNS/R
+
+  END FUNCTION BS
 
   FUNCTION Eigenvalues(M) RESULT(Lambda)
      
@@ -30,7 +70,6 @@ CONTAINS
 
     Trace = REAL(M(1,1) + M(2,2))
     Discr = 4.0d0*ABS(M(1,2))**2 + ABS(M(1,1) - M(2,2))**2
-    
 
     Lambda(1) = Half * ( Trace + a1*SQRT(Discr) )
     Lambda(2) = Half * ( Trace + a2*SQRT(Discr) )

@@ -98,6 +98,7 @@ MODULE InitializationModule
 
 
   ! --- Other useful quantities --- !
+  REAL(DP),              PUBLIC :: Rnu
   REAL(DP),              PUBLIC :: R_Shock
   REAL(DP), ALLOCATABLE, PUBLIC :: ChiOsc(:,:,:)
   REAL(DP), ALLOCATABLE, PUBLIC :: EtaOsc(:,:,:,:)

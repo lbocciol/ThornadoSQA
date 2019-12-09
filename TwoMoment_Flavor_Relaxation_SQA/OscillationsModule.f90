@@ -20,7 +20,7 @@ MODULE OscillationsModule
     SMatrixOsc, &
     nF, nM, nY, nS, nE_G
   USE OscillationsUtilsModule, ONLY: &
-    Im, B, W, JInverse, &
+    Im, B, W, JInverse, CSI, &
     Eigenvalues, EigenvectorMatrix
 
   IMPLICIT NONE
@@ -50,9 +50,9 @@ MODULE OscillationsModule
   
 CONTAINS
 
-  SUBROUTINE EvolveOscillations( t, dt )
+  SUBROUTINE EvolveOscillations( R, t, dt )
 
-    REAL(DP), INTENT(INOUT) :: t, dt
+    REAL(DP), INTENT(INOUT) :: t, dt, R
 
     LOGICAL     :: Reloop
     REAL(DP)    :: Yerror, MaxError, TimeTmp
@@ -102,7 +102,7 @@ CONTAINS
           !$OMP END PARALLEL DO
         END DO
 
-        CALL RK_step( Ytmp, Ks(k,:,:,:,:), pm0, dt )
+        CALL RK_step( Ytmp, Ks(k,:,:,:,:), pm0, dt, R )
         
       END DO
       
@@ -179,11 +179,12 @@ CONTAINS
 
   END SUBROUTINE EvolveOscillations
 
-  SUBROUTINE RK_step( Y ,K, pm0, dt )
+  SUBROUTINE RK_step( Y ,K, pm0, dt, R)
 
     REAL(DP),    INTENT(IN)    :: dt
     REAL(DP),    INTENT(IN)    :: Y(nM,nE_G,nS,nY)
     COMPLEX(DP), INTENT(IN)    :: pm0(nM,nE_G,NF,NF) 
+    REAL(DP),    INTENT(INOUT) :: R
     REAL(DP),    INTENT(INOUT) :: K(nM,nE_G,nS,nY)
     ! pm0 is the integrand of the SI potential in the mass basis
     
@@ -246,6 +247,7 @@ CONTAINS
     !$OMP END PARALLEL
 
     VfSI(2,:,:) = - CONJG(VfSI(1,:,:))
+    VfSI = VfSI * CSI( R )
     !VfSI(:,:,:) = 0.0d0 
     
     !Now the part that I DOn't REALly understand

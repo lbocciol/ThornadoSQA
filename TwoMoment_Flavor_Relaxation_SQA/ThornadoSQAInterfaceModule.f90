@@ -40,7 +40,7 @@ MODULE ThornadoSQAInterfaceModule
     SMatrixOsc, SigmaOsc, &
     EtaOsc, ChiOsc,       &
     nF, nM, nE_G, nX_G,   &
-    R_Shock
+    R_Shock, Rnu
   USE OscillationsModule, ONLY: &
     EvolveOscillations, &
     Diagonalize, &
@@ -100,6 +100,7 @@ CONTAINS
     InitializeFirstZone = .TRUE.
 
     dt_loc = 1.0d-13 !Seconds
+    Rnu = 30.0_DP
     CALL ResetSmatrix
    
     iN_X = 0
@@ -115,18 +116,18 @@ CONTAINS
 
         IF ( iN_X == nX_G ) CONTINUE
   
-        R = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
-        
+        R = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
+
         ! FOR 1D ONLY. FIND FIRST ZONE WHERE YOU WANT TO 
         ! START YOUR CALCULATIONS (E.G. 10 KM OUTSIDE
         ! NEUTRINOSPHERE      
-        IF ( R / Kilometer > 50.0_DP .AND. .NOT. DoOscillations ) THEN
+        IF ( R > 50.0_DP .AND. .NOT. DoOscillations ) THEN
   
           DoOscillations = .TRUE.
   
         END IF
   
-        IF ( R > R_Shock ) THEN
+        IF ( R > R_Shock / Kilometer ) THEN
   
           DoOscillations = .FALSE.
   
@@ -157,7 +158,7 @@ CONTAINS
   
           tmax = dr / SpeedOfLightCGS
           
-          CALL OscillationsDriver( tmax, &
+          CALL OscillationsDriver( R, tmax, &
              uPF(iNodeX,iX1,iX2,iX3,iPF_D ), &
              uAF(iNodeX,iX1,iX2,iX3,iAF_Ye) )
   
@@ -221,16 +222,16 @@ CONTAINS
 
   END SUBROUTINE SQADriver
 
-  SUBROUTINE OscillationsInterface( tOsc, dt_osc, &
+  SUBROUTINE OscillationsInterface( R, tOsc, dt_osc, &
                     f, S, nMi, nEi, nFi )
 
-    REAL(DP), INTENT(INOUT) :: tOsc, dt_osc
+    REAL(DP), INTENT(INOUT) :: tOsc, dt_osc, R
     
     INTEGER,     INTENT(IN)  :: nMi, nEi, nFi
     COMPLEX(KIND=8), INTENT(OUT) :: f(nMi,nEi,nFi,nFi)
     COMPLEX(KIND=8), INTENT(OUT) :: S(nMi,nEi,nFi,nFi)
 
-    CALL EvolveOscillations( tOsc, dt_osc )
+    CALL EvolveOscillations( R, tOsc, dt_osc )
 
     !IF (tOsc <= MaxTDump ) CALL WritefOscillations( tOsc )
     
@@ -260,10 +261,10 @@ CONTAINS
   END SUBROUTINE FinalizeOscInterface
 
 
-  SUBROUTINE OscillationsDriver( TimeBlockEnd, &
+  SUBROUTINE OscillationsDriver( R, TimeBlockEnd, &
                         Rho_in, Ye_in )             
 
-    REAL(DP), INTENT(INOUT) :: TimeBlockEnd
+    REAL(DP), INTENT(INOUT) :: TimeBlockEnd, R
     REAL(DP), INTENT(IN)    :: Rho_in, Ye_in
 
     REAL(DP) :: Rho, Ye
@@ -303,7 +304,7 @@ CONTAINS
 
       END IF
 
-      CALL EvolveOscillations( TimeBlock, dt_loc )
+      CALL EvolveOscillations( R, TimeBlock, dt_loc )
   
       !IF (TimeBlock <= MaxTDump ) CALL WritefOscillations( TimeBlock )
 
@@ -584,16 +585,19 @@ CONTAINS
 
   END SUBROUTINE GetShockRadius
 
-  SUBROUTINE Get_Profile( iNodeX, iX1, iX2, iX3, R, dR, Rho, Ye )
+  SUBROUTINE Get_Profile( iNodeX, iX1, iX2, iX3, &
+                          Rnu_Out, R, dR, Rho, Ye )
 
     INTEGER,  INTENT(IN)  :: iX1, iX2, iX3, iNodeX
-    REAL(DP), INTENT(OUT) :: R, dR, Ye, Rho
+    REAL(DP), INTENT(OUT) :: Rnu_Out, R, dR, Ye, Rho
     
     INTEGER :: iNodeX1
 
     iNodeX1 = NodeNumberTableX(1,iNodeX) 
-    
-    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
+  
+    Rnu = 30.0_DP
+    Rnu_Out = Rnu
+    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
     dR  = MeshX(1) % Width(iX1) 
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
