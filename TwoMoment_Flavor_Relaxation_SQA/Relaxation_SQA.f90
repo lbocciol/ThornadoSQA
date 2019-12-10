@@ -126,12 +126,13 @@ PROGRAM Relaxation_SQA
   ZoomX = [ 1.01413296311415_DP, 1.0_DP, 1.0_DP ]
   ZoomX = [ 1.0_DP, 1.0_DP, 1.0_DP ]  
 
-  nE  = 16
+  nE  = 70
   eL  = 0.0d0 * MeV
   eR  = 2.5d2 * MeV
   bcE = 0
   swE = 0
   ZoomE = 1.09791_DP
+  ZoomE = 1.0_DP
 
   t      = 0.0_DP
   dt_wrt = 2.0d-2 * MilliSecond

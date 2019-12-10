@@ -5,8 +5,9 @@ MODULE ThornadoSQAInterfaceModule
     Half, Two, Pi, TwoPi
   USE UnitsModule, ONLY: &
     MeV, Gram, Centimeter, &
-    Second, Kilometer, &
-    BoltzmannConstant
+    Second, Kilometer, Erg, &
+    BoltzmannConstant, &
+    PlanckConstant
   USE PhysicalConstantsModule, ONLY: &
     SpeedOfLightCGS
   USE ProgramHeaderModule, ONLY: &
@@ -32,11 +33,12 @@ MODULE ThornadoSQAInterfaceModule
     iAF_Me, iAF_Mp, iAF_Mn
   USE RadiationFieldsModule, ONLY: &
     nSpecies, uCR, nCR, iCR_N, &
-    iNuE, iNuE_Bar, &
+    iCR_G1, iNuE, iNuE_Bar, &
     iNuX, iNuX_Bar
   USE InitializationModule, ONLY: &
     IdentityC, Energies,  &
     fMatrixOsc, Psi0_loc, &
+    Psi1_loc, &
     SMatrixOsc, SigmaOsc, &
     EtaOsc, ChiOsc,       &
     nF, nM, nE_G, nX_G,   &
@@ -46,6 +48,8 @@ MODULE ThornadoSQAInterfaceModule
     Diagonalize, &
     InitializeOscArrays, &
     FinalizeOscarrays
+  USE OscillationsUtilsModule, ONLY: &
+    CSI
   USE IntegrationModule, ONLY: &
     Update_My_IMEX_PDARS
   USE ImplicitSolverModule, ONLY: &
@@ -100,7 +104,6 @@ CONTAINS
     InitializeFirstZone = .TRUE.
 
     dt_loc = 1.0d-13 !Seconds
-    Rnu = 30.0_DP
     CALL ResetSmatrix
    
     iN_X = 0
@@ -121,7 +124,7 @@ CONTAINS
         ! FOR 1D ONLY. FIND FIRST ZONE WHERE YOU WANT TO 
         ! START YOUR CALCULATIONS (E.G. 10 KM OUTSIDE
         ! NEUTRINOSPHERE      
-        IF ( R > 50.0_DP .AND. .NOT. DoOscillations ) THEN
+        IF ( R > Rnu + 10.0_DP .AND. .NOT. DoOscillations ) THEN
   
           DoOscillations = .TRUE.
   
@@ -237,7 +240,7 @@ CONTAINS
     
     f = fMatrixOsc
     S = SMatrixOsc
-    
+
   END SUBROUTINE OscillationsInterface
 
   SUBROUTINE InitializeOscInterface( Rho_in, Ye_in )
@@ -348,14 +351,19 @@ CONTAINS
 
     REAL(DP) :: fPinched(nM,nE_G,nF,nF)
     REAL(DP) :: AvgE(nSpecies), AvgE2(nSpecies), Norm(nSpecies)
+    REAL(DP) :: LumE(nSpecies), LumE2(nSpecies)
     REAL(DP) :: dE
     REAL(DP) :: alpha(nSpecies)
-    REAL(DP) :: f_loc
-    REAL(DP) :: Mnu, kT
+    REAL(DP) :: f_loc(nE_G,nSpecies)
+    REAL(DP) :: R, Mnu, kT
     CHARACTER(3) :: FileNUmber
+    REAL(DP) :: Dummy
+
+    iNodeX1 = NodeNumberTableX(1,iNodeX)
+    R = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer 
 
     iN_E = 0
-    
+
     DO iE = iE_B0, iE_E0
 
       DO iNodeE = 1,nNodesE
@@ -365,6 +373,7 @@ CONTAINS
         iNode = NodeNumber(iNodeE, iNodeX, 1, 1 )
         
         Psi0_loc(iN_E,:) = uCR(iNode,iE,iX1,iX2,iX3,iCR_N,:)
+        Psi1_loc(iN_E,:) = uCR(iNode,iE,iX1,iX2,iX3,iCR_G1,:)
 
       END DO
 
@@ -392,7 +401,9 @@ CONTAINS
               Psi0_loc(iN_E,iS) * dE
           AvgE2(iS) = AvgE2(iS) + Energies(iN_E)**4 * &
               Psi0_loc(iN_E,iS) * dE
-        
+          LumE(iS)  = LumE(iS)  + Energies(iN_E)**3 * &
+              Psi1_loc(iN_E,iS) * 2.0_DP * Pi * dE / Erg**4
+
         END DO
 
       END DO
@@ -401,13 +412,15 @@ CONTAINS
 
     AvgE  = AvgE  / Norm
     AvgE2 = AvgE2 / Norm
-
+    LumE  = LumE * 4.0_DP * Pi * (R*1.0d5)**2 * SpeedOfLightCGS / &
+            (PlanckConstant / (Erg*Second) * SpeedOfLightCGS)**3
+    
     fPinched(:,:,:,:) = Zero
 
     DO iS = 1,nSpecies
 
-      alpha(iS) = - ( Two - AvgE2(iS) / AvgE(iS)**2 ) / &
-                    ( One - AvgE2(iS) / AvgE(iS)**2 )
+      alpha(iS) = - ( Two - SQRT( AvgE2(iS) ) / AvgE(iS) ) / &
+                    ( One - SQRT( AvgE2(iS) ) / AvgE(iS) )
 
       kT = BoltzmannConstant &
                * AvgE(iS) / 3.15d0
@@ -433,64 +446,80 @@ CONTAINS
 
       END IF
 
-
       DO iN_E = 1,nE_G
 
-        f_loc = ( Energies(iN_E) / AvgE(iS) )**alpha(iS) * &
-            EXP( - (alpha(iS) + One) * Energies(iN_E) / AvgE(iS) )
-
-        !f_loc =  ( One / ( One + EXP( ( Energies(iN_E) - Mnu ) / kT ) ) )
+        !This is the pinched spectrum from Keil 2003
+        f_loc(iN_E,iS) = ( Energies(iN_E) / AvgE(iS) )**alpha(iS) * &
+            EXP( - (alpha(iS) + One) * Energies(iN_E) / AvgE(iS) ) 
+    
+        !Now normalize this spectrum to 1
+        f_loc(iN_E,iS) = f_loc(iN_E,iS) * ( alpha(iS)+1.0_DP )**( alpha(iS)+1.0_DP ) / &
+            ( AvgE(iS) / Erg )/ GAMMA( alpha(iS)+1.0_DP )
         
-        IF( iS == iNuE ) fPinched(1,iN_E,1,1) = f_loc
-        IF( iS == iNuX ) fPinched(1,iN_E,2,2) = f_loc
+        !Now multiply by Lum / AvgE / 4piR^2c as in Duan 2006 and get units of
+        !1/erg/cm^3. Also, this has an extra factor of 2pi because we have integrated
+        ! over the azimuthal angle
+        f_loc(iN_E,iS) = f_loc(iN_E,iS) * LumE(iS) / ( AvgE(iS) / Erg ) / &
+            ( 2.0_DP * Pi * SpeedOfLightCGS * ( Rnu*1.0d5 )**2 )
 
-        IF( iS == iNuE_Bar ) fPinched(2,iN_E,1,1) = f_loc
-        IF( iS == iNuX_Bar ) fPinched(2,iN_E,2,2) = f_loc
+        !f_loc(iN_E,iS) =  ( One / ( One + EXP( ( Energies(iN_E) - Mnu ) / kT ) ) )
+
+      END DO
+     
+      DO iN_E = 1,nE_G
+
+        !f_loc(iN_E,iS) = f_loc(iN_E,iS) / Norm(iS)
+        
+        IF( iS == iNuE ) fPinched(1,iN_E,1,1) = f_loc(iN_E,iS)
+        IF( iS == iNuX ) fPinched(1,iN_E,2,2) = f_loc(iN_E,iS)
+
+        IF( iS == iNuE_Bar ) fPinched(2,iN_E,1,1) = f_loc(iN_E,iS)
+        IF( iS == iNuX_Bar ) fPinched(2,iN_E,2,2) = f_loc(iN_E,iS)
 
       END DO
 
     END DO
     
-!    iNodeX1 = NodeNumberTableX(1,iNodeX)
-!    
-!    DO iN_E = 1,nE_G
-!        WRITE(FileNUmber,'(I3.3)') iN_E
-!        OPEN(UNIT=666,FILE='pinch' // FileNumber, STATUS='unknown', &
-!            FORM = 'formatted', POSITION='append')
-!        OPEN(UNIT=777,FILE='psi' // FileNumber, STATUS='unknown', &
-!            FORM = 'formatted', POSITION='append')
-! 
-!        WRITE(666,'(10ES22.11E3)') NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer, Energies(iN_E) / MeV, &
-!                             fPinched(1,iN_E,1,1), &
-!                             fPinched(2,iN_E,1,1), &
-!                             fPinched(1,iN_E,2,2), &
-!                             fPinched(2,iN_E,2,2), &
-!                             alpha(1),alpha(2),alpha(3),alpha(4)
-!        
-!         WRITE(777,'(6ES22.11E3)') NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer, Energies(iN_E) / MeV, &
-!                             Psi0_loc(iN_E,1), &
-!                             Psi0_loc(iN_E,2), &
-!                             Psi0_loc(iN_E,3), &
-!                             Psi0_loc(iN_E,4)
-!        CLOSE(666)
-!        CLOSE(777)
-!    END DO
+    DO iN_E = 1,nE_G
+        WRITE(FileNUmber,'(I3.3)') iN_E
+        OPEN(UNIT=666,FILE='pinch' // FileNumber, STATUS='unknown', &
+            FORM = 'formatted', POSITION='append')
+        OPEN(UNIT=777,FILE='psi' // FileNumber, STATUS='unknown', &
+            FORM = 'formatted', POSITION='append')
+ 
+        WRITE(666,'(10ES22.11E3)') R, Energies(iN_E) / MeV, &
+                             fPinched(1,iN_E,1,1), &
+                             fPinched(2,iN_E,1,1), &
+                             fPinched(1,iN_E,2,2), &
+                             fPinched(2,iN_E,2,2), &
+                             alpha(1),alpha(2),alpha(3),alpha(4)
+        
+         WRITE(777,'(6ES22.11E3)') R, Energies(iN_E) / MeV, &
+                             Psi0_loc(iN_E,1), &
+                             Psi0_loc(iN_E,2), &
+                             Psi0_loc(iN_E,3), &
+                             Psi0_loc(iN_E,4)
+        CLOSE(666)
+        CLOSE(777)
+    END DO
 
     DO m = 1,nM
       DO iN_E = 1,nE_G
 
-        CALL SetNonDiagonalEl( &
-            fPinched(m,iN_E,1,1), &
-            fPinched(m,iN_E,2,2), &
-            fPinched(m,iN_E,1,2), &
-            Mixing_Optional = Zero )
+        !CALL SetNonDiagonalEl( &
+        !    fPinched(m,iN_E,1,1), &
+        !    fPinched(m,iN_E,2,2), &
+        !    fPinched(m,iN_E,1,2), &
+        !    Mixing_Optional = Zero )
 
-        CALL SetNonDiagonalEl( &
-            fPinched(m,iN_E,1,1), &
-            fPinched(m,iN_E,2,2), &
-            fPinched(m,iN_E,2,1), &
-            Mixing_Optional = Zero )
-      
+        !CALL SetNonDiagonalEl( &
+        !    fPinched(m,iN_E,1,1), &
+        !    fPinched(m,iN_E,2,2), &
+        !    fPinched(m,iN_E,2,1), &
+        !    Mixing_Optional = Zero )
+        fPinched(m,iN_E,1,2) = Zero
+        fPinched(m,iN_E,2,1) = Zero
+
       END DO
     END DO
 
@@ -594,13 +623,14 @@ CONTAINS
     INTEGER :: iNodeX1
 
     iNodeX1 = NodeNumberTableX(1,iNodeX) 
-  
-    Rnu = 30.0_DP
+    
     Rnu_Out = Rnu
     R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
     dR  = MeshX(1) % Width(iX1) 
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
+    
+    WRITE(*,*) 'CSI', CSI( R )
   
   END SUBROUTINE Get_Profile
 

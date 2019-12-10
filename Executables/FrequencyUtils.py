@@ -5,7 +5,6 @@ import time
 def FrequencyAnalysis( Time, fMatrixOsc ):
     
     timer_tot = time.time()
-    print( Time )
     
     Tolerance = 5.0e-2 
    
@@ -58,6 +57,6 @@ def FrequencyAnalysis( Time, fMatrixOsc ):
     print(MaxInd)
     timer_tot = time.time() - timer_tot
     print( 'tot interp fft',timer_tot, timer_interp, timer_fft)
-    # Get most frequent index from MaxInd
 
+    # Get most frequent index from MaxInd
     return period[ max(set(MaxInd), key = MaxInd.count) ]

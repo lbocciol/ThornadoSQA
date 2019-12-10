@@ -28,7 +28,7 @@ ZoomX = np.array([ 1.0, 1.0, 1.0 ])
 
 nE    = 70
 nE_G  = nE * nNodes
-eL    = np.array( 2.5e0 ) * MeV
+eL    = np.array( 0.0e0 ) * MeV
 eR    = np.array( 2.5e2 ) * MeV
 bcE   = 0
 swE   = 0
@@ -64,10 +64,12 @@ for iNodeX in range(nDOFX):
         for iX2 in range(nX[1]):
             for iX3 in range(nX[2]):
 
+                Rnu, \
                 R[iNodeX,iX1,iX2,iX3], \
                 dR[iX1,iX2,iX3], \
                 Rho[iNodeX,iX1,iX2,iX3], \
                 Ye[iNodeX,iX1,iX2,iX3] = T2SQA.get_profile(iNodeX+1,iX1+1,iX2+1,iX3+1)
+
 
 # Do Evolution
 iCycle   = 0
@@ -121,13 +123,11 @@ while t < t_end:
               # --- OSCILLATIONS DRIVER --------------------------------------------------
               #os.system('rm ../Output/Relaxation_SQA_f*')
               iX += 1
-             
-              Rnu = np.array( 40.0 ) #kilometers
-             
-              if R[iNodeX,iX1,iX2,iX3] > 50.0e0 * Kilometer and not DoOscillations :
+              
+              if R[iNodeX,iX1,iX2,iX3] > Rnu + 10.0e0 and not DoOscillations :
                 DoOscillations = True
           
-              if  R[iNodeX,iX1,iX2,iX3] > R_Shock:                
+              if  R[iNodeX,iX1,iX2,iX3] > R_Shock / Kilometer:                
                 DoOscillations = False
                   
               if DoOscillations:
@@ -145,24 +145,21 @@ while t < t_end:
                 
                 tZone = dr / SpeedOfLightCGS 
 
-                T2SQA.initializeoscinterface( Rnu, Rho[iNodeX,iX1,iX2,iX3], Ye[iNodeX,iX1,iX2,iX3])
+                T2SQA.initializeoscinterface( Rho[iNodeX,iX1,iX2,iX3], Ye[iNodeX,iX1,iX2,iX3])
                 
                 # CALL OSCILLATIONS TO FIND PERIOD
                 FinishOsc = False
                 tOsc = np.array( 0.0 )
                 dt_osc = np.array( 1.0e-13 )
-                tmax_freq = dt_osc * 1.e3
                 f, t_freq = [], []
                 while not FinishOsc:
                   
-                  tmax_freq = dt_osc * 1.e3
+                  tmax_freq = dt_osc * 1.e4
                   if tOsc + dt_osc >= tmax_freq:    
-                    dt_osc = tmax_freq - tOsc
                     FinishOsc = True
 
                   Timers.start()
-                  ftemp, Stemp = T2SQA.oscillationsinterface( \
-                          R[iNodeX,iX1,iX2,iX3] / Kilometer, tOsc, dt_osc, nM, nE_G, nF )
+                  ftemp, Stemp = T2SQA.oscillationsinterface( R[iNodeX,iX1,iX2,iX3], tOsc, dt_osc, nM, nE_G, nF )
                   TimerOsc = Timers.stop( TimerOsc )  
 
                   t_freq.append( float(tOsc) )
@@ -179,10 +176,10 @@ while t < t_end:
                 # RESTART OSCILLATIONS FOR ~100 PERIODS
                 T2SQA.initializefmatrixosc( iNodeX+1,iX1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
 
-                T2SQA.initializeoscinterface( Rnu, Rho[iNodeX,iX1,iX2,iX3], Ye[iNodeX,iX1,iX2,iX3])
+                T2SQA.initializeoscinterface( Rho[iNodeX,iX1,iX2,iX3], Ye[iNodeX,iX1,iX2,iX3])
 
                 # Run for 100 periods
-                Period = Period * 100
+                Period = Period 
 
                 nPeriods = tZone // Period
             
@@ -194,13 +191,10 @@ while t < t_end:
                 while not FinishOsc:
 
                   if tOsc + dt_osc >= Period:
-
-                    dt_osc = tmax_freq - tOsc
                     FinishOsc = True
                   
                   Timers.start()
-                  ftemp, Stemp = T2SQA.oscillationsinterface( \
-                          R[iNodeX,iX1,iX2,iX3] / Kilometer, tOsc, dt_osc, nM, nE_G, nF )
+                  ftemp, Stemp = T2SQA.oscillationsinterface( R[iNodeX,iX1,iX2,iX3], tOsc, dt_osc, nM, nE_G, nF )
                   TimerOsc = Timers.stop( TimerOsc )
                     
                   STotalThisZone = np.array([[ np.matmul( STotalThisZone[m,iN_E,:,:], Stemp[m,iN_E,:,:]) \
@@ -223,13 +217,10 @@ while t < t_end:
                 while not FinishOsc:
 
                   if tOsc + dt_osc >= tRemainder:
-
-                    dt_osc = tmax_freq - tOsc
                     FinishOsc = True
 
                   Timers.start()
-                  ftemp, Stemp = T2SQA.oscillationsinterface( \
-                          R[iNodeX,iX1,iX2,iX3] / Kilometer, tOsc, dt_osc, nM, nE_G, nF )
+                  ftemp, Stemp = T2SQA.oscillationsinterface( R[iNodeX,iX1,iX2,iX3], tOsc, dt_osc, nM, nE_G, nF )
                   TimerOsc = Timers.stop( TimerOsc )
 
                   STotalThisZone = np.array([[ np.matmul( STotalThisZone[m,iN_E,:,:], Stemp[m,iN_E,:,:]) \

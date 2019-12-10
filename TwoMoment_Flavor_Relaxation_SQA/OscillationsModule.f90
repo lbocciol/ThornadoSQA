@@ -4,7 +4,7 @@ MODULE OscillationsModule
     DP, One, Zero, Five, &
     Two, Pi, TwoPi
   USE UnitsModule, ONLY: &
-    MeV, Gram, Centimeter, &
+    MeV, Erg, Gram, Centimeter, &
     Second
   USE ProgramHeaderModule, ONLY: &
     nNodesE, &
@@ -136,7 +136,7 @@ CONTAINS
       !$OMP END PARALLEL
 
       TimeTmp = t + dt
-      
+     
       IF(MaxError .gt. Accuracy) THEN
 
         dt = dt * 0.9 *( (Accuracy/MaxError)**(1.0d0/(nRKOrder-1.0d0)) )
@@ -314,13 +314,24 @@ CONTAINS
           dE = MeshE % Width(iE) / nNodesE / MeV
           dnuHz = dE * 1e6 * eV_to_erg / (TwoPi*hbar)
           
+          !This first one hold if f is unitless (i.e. Richers 2019)
+          !and you follow only one ray
           nuHz = Enu(iN_E) * 1e6 * eV_to_erg / (TwoPi*hbar)
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
-              fMatrixosc(m,iN_E,:,:)), &
+              fMatrixOsc(m,iN_E,:,:)), &
               U0(m,iN_E,:,:)) * &
               SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3)
-         
+      
+          !This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
+          !and you average over all the rays (notice there's no 2piE^2 jacobian)
+          dnuHz = MeshE % Width(iE) / nNodesE / Erg
+          pm0(m,iN_E,:,:) = &
+              MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
+              fMatrixOsc(m,iN_E,:,:)), &
+              U0(m,iN_E,:,:)) * &
+              SQRT(2.0d0)*GF*dnuHz
+
           END DO
         END DO
 

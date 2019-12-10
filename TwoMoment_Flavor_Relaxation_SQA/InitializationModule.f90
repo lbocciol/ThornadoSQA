@@ -104,6 +104,7 @@ MODULE InitializationModule
   REAL(DP), ALLOCATABLE, PUBLIC :: EtaOsc(:,:,:,:)
   REAL(DP), ALLOCATABLE, PUBLIC :: SigmaOsc(:,:,:)
   REAL(DP), ALLOCATABLE, PUBLIC :: Psi0_loc(:,:)
+  REAL(DP), ALLOCATABLE, PUBLIC :: Psi1_loc(:,:)
 
   REAL(DP), ALLOCATABLE :: R_Ch(:)
 
@@ -157,6 +158,7 @@ CONTAINS
       CALL Read1DChimeraProfile(R_Ch, D_Ch, T_Ch, Ye_Ch, &
             [nX1,nX2,nX3], R_Shock, TimeSlice, FileNumberMax) 
     
+      Rnu = 40.0d0 !Kilometers
       R_Shock = R_Shock * Centimeter
       R_Ch = R_Ch * Centimeter
       D_Ch = D_Ch * Gram / Centimeter ** 3
@@ -454,6 +456,7 @@ CONTAINS
     ALLOCATE( SMatrixOsc(nM,nE_G,nF,nF) )
     ALLOCATE( Enu(nE_G) )
     ALLOCATE( Psi0_loc(nE_G,nSpecies) )
+    ALLOCATE( Psi1_loc(nE_G,nSpecies) )
     ALLOCATE( SigmaOsc(nE_G,nX_G,nM) )
     ALLOCATE( EtaOsc(nE_G,nX_G,nCR,nSpecies) )
     ALLOCATE( ChiOsc(nE_G,nX_G,nSpecies) )
