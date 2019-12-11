@@ -7,9 +7,9 @@ It's a simple backward Euler that only includes Emission and Absorption
 
 - InputOutputRelaxationModule: dumps fMatrixOscillations and also attempts to create restart files, 
 although I couldn't quite succeed, so restart doesn't work yet. 
-However, since I was trying to set up restarts, this code only works if FileNumber in 
+However, since I was trying to set up restarts, the Restart Subroutine compiles 
+only if FileNumber in 
 /Modules/InputOutput/InputOutputModuleHDF.f90 is made public. 
-EmAb opacities from weaklib AND the ones calculated in SQA can also be dumped if needed.
 
 - IntegrationModule: this is basically TimeSteppingCASTRO.f90 with my implicit solver instead of the original one 
 and without any matter feedback.

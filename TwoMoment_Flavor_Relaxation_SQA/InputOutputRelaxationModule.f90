@@ -16,8 +16,6 @@ MODULE InputOutputRelaxationModule
     iPR_I2, iCR_G2, &
     iPR_I3, iCR_G3, &
     nSpecies
-  USE InputOutputModuleHDF, ONLY: &
-    FileNumber
   USE InitializationModule, ONLY: &
     nX_G, nE_G, nM, nF, &
     ChiOsc, EtaOsc, &
@@ -28,9 +26,6 @@ MODULE InputOutputRelaxationModule
   IMPLICIT NONE
   PRIVATE
 
-  PUBLIC :: InitializeFromRestart
-  PUBLIC :: WriteOpacitiesOsc
-  PUBLIC :: WriteOpacitiesStd
   PUBLIC :: WritefOscillations
 
   CHARACTER(9),  PARAMETER :: &
@@ -46,8 +41,10 @@ MODULE InputOutputRelaxationModule
   CHARACTER(10),  PARAMETER :: &
     fMatrixOscSuffix   = 'fMatrixOsc'
 
-  INTEGER :: FileNumberRestart = 0
   INTEGER :: FileNumberfOsc = 0  
+  INTEGER :: FileNumberOp   = 111111  
+  INTEGER :: FileNumberRestart = 0
+  !INTEGER :: FileNumberRestart = FileNumber !This way you don't erase previous files
 
   INTEGER :: HDFERR
 
@@ -304,116 +301,6 @@ CONTAINS
 
   END FUNCTION Field4D_Inverse
 
-
-  SUBROUTINE WriteOpacitiesOsc
-
-    CHARACTER(6)   :: FileNumberString
-    CHARACTER(256) :: FileName
-    CHARACTER(256) :: DatasetName
-    CHARACTER(256) :: GroupName
-    CHARACTER(256) :: GroupNameSpecies
-    CHARACTER(10)  :: SpeciesString
-    INTEGER        :: iS
-    INTEGER(HID_T) :: FILE_ID
-
-    WRITE( FileNumberString, FMT='(i6.6)') FileNumber
-      
-    FileName &
-      = OutputDirectory // '/' // &
-        TRIM( ProgramName ) // '_' // &
-        OpacitySuffixOsc // '_' // &
-        FileNumberString // '.h5'
-    
-     GroupName = 'OpacitiesOsc'
-
-    CALL H5OPEN_F( HDFERR )
-
-    CALL H5FCREATE_F( TRIM( FileName ), H5F_ACC_TRUNC_F, FILE_ID, HDFERR )
-
-    CALL CreateGroupHDF( FileName, TRIM( GroupName ), FILE_ID )
-
-    DO iS = 1,nSpecies
-
-      WRITE( SpeciesString, FMT='(A8,I2.2)') 'Species_',iS
-
-      GroupNameSpecies = TRIM( GroupName ) // '/' // SpeciesString
-
-      CALL CreateGroupHDF( FileName, TRIM( GroupNameSpecies ), FILE_ID )
-
-      DatasetName =  TRIM( GroupNameSpecies ) // '/Eta'
-  
-      CALL WriteDataset3DHDF &
-          ( EtaOsc(1:nE_G,1:nX_G,1:nCR,iS), DatasetName, FILE_ID )
-  
-      DatasetName = TRIM( GroupNameSpecies ) // '/Chi'
-  
-      CALL WriteDataset2DHDF &
-          ( ChiOsc(1:nE_G,1:nX_G,iS), DatasetName, FILE_ID )
- 
-    END DO
-
-    CALL H5FCLOSE_F( FILE_ID, HDFERR )
-  
-    CALL H5CLOSE_F( HDFERR )
-
-  END SUBROUTINE WriteOpacitiesOsc
-
-
-  SUBROUTINE WriteOpacitiesStd( Chi, Eta )
-
-    REAL(DP), INTENT(INOUT) :: Chi(nE_G,nX_G,nSpecies)
-    REAL(DP), INTENT(INOUT) :: Eta(nE_G,nX_G,nSpecies)
-
-    CHARACTER(6)   :: FileNumberString
-    CHARACTER(256) :: FileName
-    CHARACTER(256) :: DatasetName
-    CHARACTER(256) :: GroupName
-    CHARACTER(256) :: GroupNameSpecies
-    CHARACTER(10)  :: SpeciesString
-    INTEGER        :: iS
-    INTEGER(HID_T) :: FILE_ID
-
-    WRITE( FileNumberString, FMT='(i6.6)') FileNumber
-
-    FileName &
-      = OutputDirectory // '/' // &
-        TRIM( ProgramName ) // '_' // &
-        OpacitySuffixStd // '_' // &
-        FileNumberString // '.h5'
-
-    GroupName = 'OpacitiesStd'
-    
-    CALL H5OPEN_F( HDFERR )
-
-    CALL H5FCREATE_F( TRIM( FileName ), H5F_ACC_TRUNC_F, FILE_ID, HDFERR )
-
-    CALL CreateGroupHDF( FileName, TRIM( GroupName ), FILE_ID )
-
-    DO iS = 1,nSpecies
-
-      WRITE( SpeciesString, FMT='(A8,I2.2)') 'Species_',iS
-
-      GroupNameSpecies = TRIM( GroupName ) // '/' // SpeciesString
-
-      CALL CreateGroupHDF( FileName, TRIM( GroupNameSpecies ), FILE_ID )
-
-      DatasetName =  TRIM( GroupNameSpecies ) // '/Eta'
-  
-      CALL WriteDataset2DHDF &
-          ( Eta(1:nE_G,1:nX_G,iS), DatasetName, FILE_ID )
-  
-      DatasetName = TRIM( GroupNameSpecies ) // '/Chi'
-  
-      CALL WriteDataset2DHDF &
-          ( Chi(1:nE_G,1:nX_G,iS), DatasetName, FILE_ID )
- 
-    END DO
-
-    CALL H5FCLOSE_F( FILE_ID, HDFERR )
-  
-    CALL H5CLOSE_F( HDFERR )
-
-  END SUBROUTINE WriteOpacitiesStd
 
   SUBROUTINE WritefOscillations( Time )
 

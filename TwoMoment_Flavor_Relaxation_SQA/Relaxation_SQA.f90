@@ -58,7 +58,7 @@ PROGRAM Relaxation_SQA
   USE RadiationFieldsModule, ONLY: &
     uCR, uPR, iPR_D
   USE InputOutputModuleHDF, ONLY: &
-    WriteFieldsHDF, FileNumber
+    WriteFieldsHDF
   USE EquationOfStateModule, ONLY: &
     InitializeEquationOfState, &
     FinalizeEquationOfState
@@ -87,16 +87,12 @@ PROGRAM Relaxation_SQA
   USE ThornadoSQAInterfaceModule, ONLY: &
     SQADriver, &
     IntegrationDriver
-  USE InputOutputRelaxationModule, ONLY: &
-    InitializeFromRestart
 
   IMPLICIT NONE
 
   LOGICAL  :: wrt
-  LOGICAL  :: Restart
   LOGICAL  :: StartSQA, StopSQA
 
-  INTEGER  :: RestartNumber
   INTEGER  :: iCycle, iCycleD
   INTEGER  :: nNodes, nSpecies
   INTEGER  :: nE, bcE, bcX(3)
@@ -109,9 +105,6 @@ PROGRAM Relaxation_SQA
   REAL(DP) :: dt, t_SQA
   REAL(DP) :: t_wrt, dt_wrt
   REAL(DP) :: TimeSlice = 0.3d0 !Seconds
-
-  Restart = .FALSE.
-  RestartNumber = 101
 
   nNodes = 2
   nSpecies = 4
@@ -243,18 +236,6 @@ PROGRAM Relaxation_SQA
 
   CALL InitializeOscillations
   
-  IF( Restart ) THEN
-
-    CALL InitializeFromRestart( RestartNumber, &
-        t, nX, swX, nE, swE )
-
-    FileNumber = RestartNumber + 1
-    
-  ELSE
-
-    t = 0.0_DP
-
-  END IF
  
   CALL WriteFieldsHDF &
          ( Time = 0.0_DP, &
@@ -274,6 +255,7 @@ PROGRAM Relaxation_SQA
   WRITE(*,*)
 
   iCycle   = 0
+  t = 0.0_DP
   t_wrt    = dt_wrt
   wrt      = .FALSE.
   StartSQA = .FALSE.
