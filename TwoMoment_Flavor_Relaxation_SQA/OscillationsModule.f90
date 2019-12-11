@@ -11,6 +11,8 @@ MODULE OscillationsModule
     iE_B0, iE_E0
   USE MeshModule, ONLY: &
     MeshE
+  USE ReferenceElementModuleE, ONLY: &
+    WeightsE
   USE InitializationModule, ONLY: &
     BB5, BB6, AA, nRK, nRKOrder
   USE InitializationModule, ONLY: &
@@ -102,7 +104,7 @@ CONTAINS
           !$OMP END PARALLEL DO
         END DO
 
-        CALL RK_step( Ytmp, Ks(k,:,:,:,:), pm0, dt, R )
+        CALL RK_step( Ytmp, Ks(k,:,:,:,:), pm0, t, dt, R )
         
       END DO
       
@@ -179,9 +181,9 @@ CONTAINS
 
   END SUBROUTINE EvolveOscillations
 
-  SUBROUTINE RK_step( Y ,K, pm0, dt, R)
+  SUBROUTINE RK_step( Y ,K, pm0, t, dt, R)
 
-    REAL(DP),    INTENT(IN)    :: dt
+    REAL(DP),    INTENT(IN)    :: t, dt
     REAL(DP),    INTENT(IN)    :: Y(nM,nE_G,nS,nY)
     COMPLEX(DP), INTENT(IN)    :: pm0(nM,nE_G,NF,NF) 
     REAL(DP),    INTENT(INOUT) :: R
@@ -247,7 +249,7 @@ CONTAINS
     !$OMP END PARALLEL
 
     VfSI(2,:,:) = - CONJG(VfSI(1,:,:))
-    VfSI = VfSI * CSI( R )
+    VfSI = VfSI * CSI( R + clite*t*1.0d-5 )
     !VfSI(:,:,:) = 0.0d0 
     
     !Now the part that I DOn't REALly understand
@@ -311,7 +313,7 @@ CONTAINS
           
           iN_E = iN_E + 1
 
-          dE = MeshE % Width(iE) / nNodesE / MeV
+          dE = MeshE % Width(iE) / MeV
           dnuHz = dE * 1e6 * eV_to_erg / (TwoPi*hbar)
           
           !This first one hold if f is unitless (i.e. Richers 2019)
@@ -320,21 +322,27 @@ CONTAINS
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
               fMatrixOsc(m,iN_E,:,:)), &
               U0(m,iN_E,:,:)) * &
-              SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3)
+              SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3) * &
+              WeightsE(iNodeE)
       
           ! This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
+<<<<<<< HEAD
+          dnuHz = MeshE % Width(iE) / Erg
+=======
           dnuHz = MeshE % Width(iE) / nNodesE / Erg
+>>>>>>> 3b00b0779dac05edbb208cd4135870aa318f3008
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
               fMatrixOsc(m,iN_E,:,:)), &
               U0(m,iN_E,:,:)) * &
-              SQRT(2.0d0)*GF*dnuHz
+              SQRT(2.0d0)*GF*dnuHz * &
+              WeightsE(iNodeE)
 
           END DO
         END DO
 
     END DO
-
+  
   END SUBROUTINE Get_P
 
   SUBROUTINE Diagonalize( Rho, Ye )

@@ -21,8 +21,13 @@ MODULE ThornadoSQAInterfaceModule
     NodeCoordinate
   USE ReferenceElementModuleX, ONLY: & 
     NodeNumberTableX
+<<<<<<< HEAD
+  USE ReferenceElementModuleE, ONLY: &
+    WeightsE
+=======
   USE UtilitiesModule, ONLY: &
     NodeNumber
+>>>>>>> 3b00b0779dac05edbb208cd4135870aa318f3008
   USE NeutrinoOpacitiesComputationModule, ONLY: &
     ComputeNeutrinoOpacities_EC_Points
   USE NeutrinoOpacitiesModule, ONLY: &
@@ -115,8 +120,12 @@ CONTAINS
         iNodeX1 = NodeNumberTableX(1,iNodeX)
 
         IF ( iN_X == nX_G ) CONTINUE
-  
-        R = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
+ 
+        ! This only works with 2 nodes
+
+        R = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) - &
+              MeshX(1) % Width(iX1) / 4.0_DP
+        R = R / Kilometer
 
         ! FOR 1D ONLY. FIND FIRST ZONE WHERE YOU WANT TO 
         ! START YOUR CALCULATIONS (E.G. 10 KM OUTSIDE
@@ -149,11 +158,6 @@ CONTAINS
   
           END IF
   
-          ! --- These are two different ways of defining dr, not 
-          ! --- sure which is the best
-          
-          dr = ( NodeCoordinate( MeshX(1), iX1+1, iNodeX1 ) &
-               - NodeCoordinate( MeshX(1), iX1,   iNodeX1 ) ) / Centimeter
           dr = MeshX(1) % Width(iX1) / nNodesX(1) / Centimeter
   
           tmax = dr / SpeedOfLightCGS
@@ -342,24 +346,28 @@ CONTAINS
       iN_E = 0
 
       DO iE = iE_B0,iE_E0
+    
+        dE = MeshE % Width(iE)
         
         DO iNodeE = 1,nNodesE
 
           iN_E = iN_E + 1
-
-          dE = MeshE % Width(iE) / nNodesE
                
-          Norm(iS)  = Norm(iS)  + Energies(iN_E)**2 * &
-              Psi0_loc(iN_E,iS) * dE
-          AvgE(iS)  = AvgE(iS)  + Energies(iN_E)**3 * &
-              Psi0_loc(iN_E,iS) * dE
-          AvgE2(iS) = AvgE2(iS) + Energies(iN_E)**4 * &
-              Psi0_loc(iN_E,iS) * dE
-          LumE(iS)  = LumE(iS)  + Energies(iN_E)**3 * &
-              Psi1_loc(iN_E,iS) * 2.0_DP * Pi * dE / Erg**4
+          Norm(iS)  = Norm(iS)  + dE * WeightsE(iNodeE) &
+              * Energies(iN_E)**2 * Psi0_loc(iN_E,iS)
+          
+          AvgE(iS)  = AvgE(iS)  + dE * WeightsE(iNodeE) &
+              * Energies(iN_E)**3 * Psi0_loc(iN_E,iS)
+
+          AvgE2(iS) = AvgE2(iS) + dE * WeightsE(iNodeE) &
+              * Energies(iN_E)**4 * Psi0_loc(iN_E,iS)
+          
+          LumE(iS)  = LumE(iS)  + dE * WeightsE(iNodeE) &
+              * Energies(iN_E)**3 * Psi1_loc(iN_E,iS) * &
+              2.0_DP * Pi / Erg**4
 
         END DO
-
+        
       END DO
     
     END DO
@@ -554,7 +562,7 @@ CONTAINS
     iNodeX1 = NodeNumberTableX(1,iNodeX) 
     
     Rnu_Out = Rnu
-    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
+    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
     dR  = MeshX(1) % Width(iX1) 
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
