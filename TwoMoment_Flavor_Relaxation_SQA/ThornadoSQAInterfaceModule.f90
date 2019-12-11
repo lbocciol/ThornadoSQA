@@ -21,13 +21,10 @@ MODULE ThornadoSQAInterfaceModule
     NodeCoordinate
   USE ReferenceElementModuleX, ONLY: & 
     NodeNumberTableX
-<<<<<<< HEAD
   USE ReferenceElementModuleE, ONLY: &
     WeightsE
-=======
   USE UtilitiesModule, ONLY: &
     NodeNumber
->>>>>>> 3b00b0779dac05edbb208cd4135870aa318f3008
   USE NeutrinoOpacitiesComputationModule, ONLY: &
     ComputeNeutrinoOpacities_EC_Points
   USE NeutrinoOpacitiesModule, ONLY: &

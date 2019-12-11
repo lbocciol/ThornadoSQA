@@ -326,11 +326,7 @@ CONTAINS
               WeightsE(iNodeE)
       
           ! This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
-<<<<<<< HEAD
           dnuHz = MeshE % Width(iE) / Erg
-=======
-          dnuHz = MeshE % Width(iE) / nNodesE / Erg
->>>>>>> 3b00b0779dac05edbb208cd4135870aa318f3008
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
               fMatrixOsc(m,iN_E,:,:)), &
