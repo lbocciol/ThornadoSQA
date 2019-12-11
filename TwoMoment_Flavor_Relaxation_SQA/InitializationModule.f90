@@ -157,8 +157,15 @@ CONTAINS
       
       CALL Read1DChimeraProfile(R_Ch, D_Ch, T_Ch, Ye_Ch, &
             [nX1,nX2,nX3], R_Shock, TimeSlice, FileNumberMax) 
-    
-      Rnu = 40.0d0 !Kilometers
+   
+      ! Set neutrinosphere at rho = 1.0d11 g/cm^3
+      DO iX1 = 1,nX1
+        IF ( D_Ch(iX1) <= 1.0d11 ) THEN
+          Rnu = R_Ch(iX1) * 1.0d-5 !Kilometers
+          EXIT
+        END IF
+      END DO
+
       R_Shock = R_Shock * Centimeter
       R_Ch = R_Ch * Centimeter
       D_Ch = D_Ch * Gram / Centimeter ** 3
@@ -461,6 +468,7 @@ CONTAINS
     ALLOCATE( EtaOsc(nE_G,nX_G,nCR,nSpecies) )
     ALLOCATE( ChiOsc(nE_G,nX_G,nSpecies) )
 
+    SigmaOsc = Zero
     ChiOsc = Zero
     EtaOsc = Zero
     Enu = Energies / MeV

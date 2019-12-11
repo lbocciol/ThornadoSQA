@@ -315,7 +315,6 @@ CONTAINS
           dnuHz = dE * 1e6 * eV_to_erg / (TwoPi*hbar)
           
           !This first one hold if f is unitless (i.e. Richers 2019)
-          !and you follow only one ray
           nuHz = Enu(iN_E) * 1e6 * eV_to_erg / (TwoPi*hbar)
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
@@ -323,8 +322,7 @@ CONTAINS
               U0(m,iN_E,:,:)) * &
               SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3)
       
-          !This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
-          !and you average over all the rays (notice there's no 2piE^2 jacobian)
+          ! This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
           dnuHz = MeshE % Width(iE) / nNodesE / Erg
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &

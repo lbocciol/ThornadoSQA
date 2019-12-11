@@ -137,7 +137,7 @@ PROGRAM Relaxation_SQA
   t      = 0.0_DP
   dt_wrt = 2.0d-2 * MilliSecond
   t_SQA  = 1.0d-9  * MilliSecond
-  t_end  = 2.0d0  * MilliSecond 
+  t_end  = 3.0d0  * MilliSecond 
 
   iCycleD = 1
 

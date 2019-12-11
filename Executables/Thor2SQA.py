@@ -5,7 +5,7 @@ from MatrixUtils import UnitarityCheck
 from Timers import TimerOsc, TimerFreq, TimerIMEX
 import Timers
 import numpy as np
-#import sys
+import sys
 
 UnitarityTolerance = 1.0e-4
 
@@ -34,7 +34,7 @@ bcE   = 0
 swE   = 0
 ZoomE = np.array( 1.0 )
 
-TimeSlice = np.array( 0.3 )
+TimeSlice = np.array( 0.6 )
 
 t      = np.array( 0.0 )
 dt_wrt = np.array( 2.0e-2 ) * MilliSecond
@@ -69,7 +69,6 @@ for iNodeX in range(nDOFX):
                 dR[iX1,iX2,iX3], \
                 Rho[iNodeX,iX1,iX2,iX3], \
                 Ye[iNodeX,iX1,iX2,iX3] = T2SQA.get_profile(iNodeX+1,iX1+1,iX2+1,iX3+1)
-
 
 # Do Evolution
 iCycle   = 0
@@ -154,7 +153,7 @@ while t < t_end:
                 f, t_freq = [], []
                 while not FinishOsc:
                   
-                  tmax_freq = dt_osc * 1.e4
+                  tmax_freq = dt_osc * 1.0e4
                   if tOsc + dt_osc >= tmax_freq:    
                     FinishOsc = True
 

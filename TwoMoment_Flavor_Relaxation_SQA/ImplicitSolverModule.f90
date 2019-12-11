@@ -12,12 +12,16 @@ MODULE ImplicitSolverModule
     iE_E0, iX_E0, iX_B0
   USE ReferenceElementModule, ONLY: &
     NodeNumberTable
+  USE ReferenceElementModuleX, ONLY: &
+    NodeNumberTableX
+  USE UtilitiesModule, ONLY: &
+    NodeNumber
   USE NeutrinoOpacitiesComputationModule, ONLY: &
     ComputeNeutrinoOpacities_EC_Points
   USE RadiationFieldsModule, ONLY: &
-    nSpecies, nCR, &
+    nSpecies, nCR, uCR, &
     iCR_N, iCR_G1, iCR_G2, iCR_G3, &
-    iNuE, iNuE_Bar
+    iNuE, iNuE_Bar, iNuX, iNuX_Bar
   USE MeshModule, ONLY: &
     MeshE, NodeCoordinate
   USE FluidFieldsModule, ONLY: &                          
@@ -28,7 +32,7 @@ MODULE ImplicitSolverModule
     FermiDirac
   USE InitializationModule, ONLY: &
     nX_G, nE_G, Energies,&
-    ChiOsc, EtaOsc
+    SigmaOsc, ChiOsc, EtaOsc
 
   IMPLICIT NONE
   PRIVATE
@@ -130,7 +134,42 @@ CONTAINS
     CALL ComputeEmission(  &
         Energies(:), Chi_Temp(:,:,:), &
         Chi(:,:,:), Eta(:,:,:), nE_G, nX_G )
-     
+   
+    !Calculate Contribution from oscillations
+    DO iN_X = 1, nX_G
+      iN_E = 0
+      DO iE = iE_B0,iE_E0
+        DO iNodeE = 1,nNodesE
+
+          iX3    = MOD( (iN_X-1) / ( nDOFX * nX(1) * nX(2) ), nX(3) ) + iX_B0(3)
+          iX2    = MOD( (iN_X-1) / ( nDOFX * nX(1)         ), nX(2) ) + iX_B0(2)
+          iX1    = MOD( (iN_X-1) / ( nDOFX                 ), nX(1) ) + iX_B0(1)
+          iNodeX = MOD( (iN_X-1)                            , nDOFX ) + 1
+          iNodeX1 = NodeNumberTableX(1,iNodeX)
+          iNode = NodeNumber(iNodeE, iNodeX1, 1, 1 )
+          iN_E = iN_E + 1
+
+          DO iCR = 1,nCR
+
+              EtaOsc(iN_E,iN_X,iCR,iNuE) = SigmaOsc(iN_E,iN_X,1) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuX)
+              ChiOsc(iN_E,iN_X,iNuE)     = SigmaOsc(iN_E,iN_X,1)
+
+              EtaOsc(iN_E,iN_X,iCR,iNuX) = SigmaOsc(iN_E,iN_X,1) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuE)
+              ChiOsc(iN_E,iN_X,iNuX)     = SigmaOsc(iN_E,iN_X,1)
+
+              EtaOsc(iN_E,iN_X,iCR,iNuE_Bar) = SigmaOsc(iN_E,iN_X,2) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuX_Bar)
+              ChiOsc(iN_E,iN_X,iNuE_Bar)     = SigmaOsc(iN_E,iN_X,2)
+
+              EtaOsc(iN_E,iN_X,iCR,iNuX_Bar) = SigmaOsc(iN_E,iN_X,2) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuE_Bar)
+              ChiOsc(iN_E,iN_X,iNuX_Bar)     = SigmaOsc(iN_E,iN_X,2)
+
+          END DO
+
+        END DO
+      END DO
+    END DO
+
+
     CALL SolveThisIteration( dt, CR_New)
 
     !$OMP PARALLEL DEFAULT(SHARED) &

@@ -34,14 +34,14 @@ CONTAINS
     y = R / Rnu
     
     ! Duan 2006 astro-ph/0606616
-    ! GeomFactor = 0.5_DP * ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) )**2
+    GeomFactor = 0.5_DP * ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) )**2
 
     ! Duan 2006 astro-ph/0606616 correction
-    ! GeomFactor = ( ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) ) / (Rnu/R) )**2
+    !GeomFactor = ( ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) ) / (Rnu/R) )**2
 
     ! Dasgupta 0805.3300 2008 
-    GeomFactor = 4.0_DP * ( ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) ) / &
-                            (Rnu/R)**2 )**2 - 1.0_DP
+    !GeomFactor = 4.0_DP * ( ( 1.0_DP - SQRT( 1.0_DP - (Rnu/R)**2 ) ) / &
+    !                        (Rnu/R)**2 )**2 - 1.0_DP
 
   END FUNCTION CSI
 

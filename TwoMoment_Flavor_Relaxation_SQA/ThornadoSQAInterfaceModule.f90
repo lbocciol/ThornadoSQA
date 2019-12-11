@@ -19,10 +19,10 @@ MODULE ThornadoSQAInterfaceModule
   USE MeshModule, ONLY: &
     MeshE, MeshX, &
     NodeCoordinate
-  USE UtilitiesModule, ONLY: &
-    NodeNumber
   USE ReferenceElementModuleX, ONLY: & 
     NodeNumberTableX
+  USE UtilitiesModule, ONLY: &
+    NodeNumber
   USE NeutrinoOpacitiesComputationModule, ONLY: &
     ComputeNeutrinoOpacities_EC_Points
   USE NeutrinoOpacitiesModule, ONLY: &
@@ -40,7 +40,6 @@ MODULE ThornadoSQAInterfaceModule
     fMatrixOsc, Psi0_loc, &
     Psi1_loc, &
     SMatrixOsc, SigmaOsc, &
-    EtaOsc, ChiOsc,       &
     nF, nM, nE_G, nX_G,   &
     R_Shock, Rnu
   USE OscillationsModule, ONLY: &
@@ -55,8 +54,6 @@ MODULE ThornadoSQAInterfaceModule
   USE ImplicitSolverModule, ONLY: &
     ComputeEmission
   USE InputOutputRelaxationModule, ONLY: &
-    WriteOpacitiesOsc, &
-    WriteOpacitiesStd, &
     WritefOscillations
 
   IMPLICIT NONE 
@@ -177,50 +174,6 @@ CONTAINS
     END DO
     END DO
 
-    CALL WriteOpacitiesOsc
-
-    !$OMP PARALLEL DO PRIVATE( iPF, iAF, iN_X, iX1, iX2, iX3 )
-    DO iN_X = 1, nX_G
-
-      DO iPF = 1, nPF
-        iX3    = MOD( (iN_X-1) / ( nDOFX * nX(1) * nX(2) ), nX(3) ) + iX_B0(3)
-        iX2    = MOD( (iN_X-1) / ( nDOFX * nX(1)         ), nX(2) ) + iX_B0(2)
-        iX1    = MOD( (iN_X-1) / ( nDOFX                 ), nX(1) ) + iX_B0(1)
-        iNodeX = MOD( (iN_X-1)               , nDOFX ) + 1
-
-        PF_N(iN_X,iPF) = uPF(iNodeX,iX1,iX2,iX3,iPF)
-      END DO
-
-      DO iAF = 1, nAF
-        iX3    = MOD( (iN_X-1) / ( nDOFX * nX(1) * nX(2) ), nX(3) ) + iX_B0(3)
-        iX2    = MOD( (iN_X-1) / ( nDOFX * nX(1)         ), nX(2) ) + iX_B0(2)
-        iX1    = MOD( (iN_X-1) / ( nDOFX                 ), nX(1) ) + iX_B0(1)
-        iNodeX = MOD( (iN_X-1)                            , nDOFX ) + 1
-
-        AF_N(iN_X,iAF) = uAF(iNodeX,iX1,iX2,iX3,iAF)
-      END DO
-
-    END DO
-    !$OMP END PARALLEL DO
-
-    DO iS = 1,2
-
-      CALL ComputeNeutrinoOpacities_EC_Points &
-             ( 1, nE_G, 1, nX_G, &
-               Energies (:), &
-               PF_N(:,iPF_D ), &
-               AF_N(:,iAF_T ), &
-               AF_N(:,iAF_Ye), &
-               iS, Chi_Temp(:,:,iS) )
-
-    END DO
-
-    CALL ComputeEmission(  &
-        Energies(:), Chi_Temp(:,:,:), &
-        Chi(:,:,:), Eta(:,:,:), nE_G, nX_G )
-
-    CALL WriteOpacitiesStd( Chi, Eta )
-    
     DEALLOCATE( SMatrixTotal )
 
   END SUBROUTINE SQADriver
@@ -382,6 +335,7 @@ CONTAINS
     AvgE(:)  = Zero
     AvgE2(:) = Zero
     Norm(:)  = Zero
+    LumE(:)  = Zero
 
     DO iS = 1,nSpecies
         
@@ -480,28 +434,28 @@ CONTAINS
 
     END DO
     
-    DO iN_E = 1,nE_G
-        WRITE(FileNUmber,'(I3.3)') iN_E
-        OPEN(UNIT=666,FILE='pinch' // FileNumber, STATUS='unknown', &
-            FORM = 'formatted', POSITION='append')
-        OPEN(UNIT=777,FILE='psi' // FileNumber, STATUS='unknown', &
-            FORM = 'formatted', POSITION='append')
- 
-        WRITE(666,'(10ES22.11E3)') R, Energies(iN_E) / MeV, &
-                             fPinched(1,iN_E,1,1), &
-                             fPinched(2,iN_E,1,1), &
-                             fPinched(1,iN_E,2,2), &
-                             fPinched(2,iN_E,2,2), &
-                             alpha(1),alpha(2),alpha(3),alpha(4)
-        
-         WRITE(777,'(6ES22.11E3)') R, Energies(iN_E) / MeV, &
-                             Psi0_loc(iN_E,1), &
-                             Psi0_loc(iN_E,2), &
-                             Psi0_loc(iN_E,3), &
-                             Psi0_loc(iN_E,4)
-        CLOSE(666)
-        CLOSE(777)
-    END DO
+!    DO iN_E = 1,nE_G
+!        WRITE(FileNUmber,'(I3.3)') iN_E
+!        OPEN(UNIT=666,FILE='pinch' // FileNumber, STATUS='unknown', &
+!            FORM = 'formatted', POSITION='append')
+!        OPEN(UNIT=777,FILE='psi' // FileNumber, STATUS='unknown', &
+!            FORM = 'formatted', POSITION='append')
+! 
+!        WRITE(666,'(10ES22.11E3)') R, Energies(iN_E) / MeV, &
+!                             fPinched(1,iN_E,1,1), &
+!                             fPinched(2,iN_E,1,1), &
+!                             fPinched(1,iN_E,2,2), &
+!                             fPinched(2,iN_E,2,2), &
+!                             alpha(1),alpha(2),alpha(3),alpha(4)
+!        
+!         WRITE(777,'(6ES22.11E3)') R, Energies(iN_E) / MeV, &
+!                             Psi0_loc(iN_E,1), &
+!                             Psi0_loc(iN_E,2), &
+!                             Psi0_loc(iN_E,3), &
+!                             Psi0_loc(iN_E,4)
+!        CLOSE(666)
+!        CLOSE(777)
+!    END DO
 
     DO m = 1,nM
       DO iN_E = 1,nE_G
@@ -569,6 +523,7 @@ CONTAINS
       DO m = 1,nM
         
         TransProb(iN_E) = One - MIN( See2(m,iN_E) , One )
+        TransProb(iN_E) = 1.0d-3
         SigmaOsc(iN_E,iN_X,m) = TransProb(iN_E) * SpeedOfLightCGS / ZoneWidth
     
         WRITE(*,*) iN_E, See2(m,iN_E), REAL(fMatrixOsc(m,iN_E,1,1))
@@ -578,32 +533,6 @@ CONTAINS
     ! Now convert to code units
     SigmaOsc(:,:,:) = SigmaOsc(:,:,:) * One / Second
     
-    iN_E = 0
-
-    DO iE = iE_B0,iE_E0
-      DO iNodeE = 1,nNodesE
-        
-        iNode = NodeNumber(iNodeE, iNodeX1, 1, 1 )
-        iN_E = iN_E + 1
-
-        DO iCR = 1,nCR
-        
-            EtaOsc(iN_E,iN_X,iCR,iNuE) = SigmaOsc(iN_E,iN_X,1) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuX)
-            ChiOsc(iN_E,iN_X,iNuE)     = SigmaOsc(iN_E,iN_X,1)
-        
-            EtaOsc(iN_E,iN_X,iCR,iNuX) = SigmaOsc(iN_E,iN_X,1) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuE)
-            ChiOsc(iN_E,iN_X,iNuX)     = SigmaOsc(iN_E,iN_X,1)
-
-            EtaOsc(iN_E,iN_X,iCR,iNuE_Bar) = SigmaOsc(iN_E,iN_X,2) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuX_Bar)
-            ChiOsc(iN_E,iN_X,iNuE_Bar)     = SigmaOsc(iN_E,iN_X,2) 
-
-            EtaOsc(iN_E,iN_X,iCR,iNuX_Bar) = SigmaOsc(iN_E,iN_X,2) * uCR(iNode,iE,iX1,iX2,iX3,iCR,iNuE_Bar)
-            ChiOsc(iN_E,iN_X,iNuX_Bar)     = SigmaOsc(iN_E,iN_X,2)
-
-        END DO
-      END DO
-    END DO
-
   END SUBROUTINE CalculateOpacitiesOsc
 
   SUBROUTINE GetShockRadius( R_Shock_Loc)
