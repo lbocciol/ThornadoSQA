@@ -530,14 +530,12 @@ CONTAINS
         
         TransProb(iN_E) = One - MIN( See2(m,iN_E) , One )
         TransProb(iN_E) = 1.0d-3
-        SigmaOsc(iN_E,iN_X,m) = TransProb(iN_E) * SpeedOfLightCGS / ZoneWidth
+        SigmaOsc(iN_E,iN_X,m) = TransProb(iN_E) * SpeedOfLightCGS / ZoneWidth * &
+            One / Second !convert to code units
     
         WRITE(*,*) iN_E, See2(m,iN_E), REAL(fMatrixOsc(m,iN_E,1,1))
       END DO
     END DO
-    
-    ! Now convert to code units
-    SigmaOsc(:,:,:) = SigmaOsc(:,:,:) * One / Second
     
   END SUBROUTINE CalculateOpacitiesOsc
 
