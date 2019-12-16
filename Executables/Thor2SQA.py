@@ -126,7 +126,7 @@ while t < t_end:
               if R[iNodeX,iX1,iX2,iX3] > Rnu + 10.0e0 and not DoOscillations :
                 DoOscillations = True
           
-              if  R[iNodeX,iX1,iX2,iX3] > R_Shock / Kilometer:                
+              if  R[iNodeX,iX1,iX2,iX3] > R_Shock :                
                 DoOscillations = False
                   
               if DoOscillations:
@@ -140,7 +140,7 @@ while t < t_end:
                   # spectrum coming from the previous zone
                   T2SQA.initializefmatrixosc( iNodeX+1,iX1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
         
-                dr = dR[iX1,iX2,iX3] / nNodes / Centimeter 
+                dr = dR[iX1,iX2,iX3] * 1.0e5 / nNodes  
                 
                 tZone = dr / SpeedOfLightCGS 
 

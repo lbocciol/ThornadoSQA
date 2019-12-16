@@ -545,7 +545,7 @@ CONTAINS
 
     REAL(DP), INTENT(OUT) :: R_Shock_Loc
 
-    R_Shock_Loc = R_Shock
+    R_Shock_Loc = R_Shock / Kilometer
 
   END SUBROUTINE GetShockRadius
 
@@ -560,13 +560,11 @@ CONTAINS
     iNodeX1 = NodeNumberTableX(1,iNodeX) 
     
     Rnu_Out = Rnu
-    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
-    dR  = MeshX(1) % Width(iX1) 
+    R   = NodeCoordinate( MeshX(1), iX1, iNodeX1 ) / Kilometer
+    dR  = MeshX(1) % Width(iX1) / Kilometer 
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
     
-    WRITE(*,*) 'CSI', CSI( R / Kilometer )
-  
   END SUBROUTINE Get_Profile
 
   SUBROUTINE SetNonDiagonalEl( El_11, El_22, El_12,  &
