@@ -476,6 +476,7 @@ CONTAINS
         !    fPinched(m,iN_E,2,2), &
         !    fPinched(m,iN_E,2,1), &
         !    Mixing_Optional = Zero )
+        
         fPinched(m,iN_E,1,2) = Zero
         fPinched(m,iN_E,2,1) = Zero
 
@@ -571,6 +572,8 @@ CONTAINS
   SUBROUTINE SetNonDiagonalEl( El_11, El_22, El_12,  &
                         Mixing_Optional )
 
+    ! This Subroutine only works for f normalized to 1 !
+    
     REAL(DP), INTENT(IN)  :: El_11, El_22
     REAL(DP), INTENT(OUT) :: El_12
     REAL(DP), INTENT(IN), OPTIONAL :: Mixing_Optional
@@ -580,9 +583,11 @@ CONTAINS
     REAL(DP) :: El_z, El_x
     REAL(DP) :: Trace
 
-    Mixing = One
-    IF( PRESENT(Mixing_Optional) ) &
+    IF( PRESENT(Mixing_Optional) ) THEN
       Mixing = Mixing_Optional
+    ELSE
+      Mixing = Zero
+    END IF
 
     Trace = El_11 + El_22
     Lmax = MIN( Half * Trace, One - Half * Trace )

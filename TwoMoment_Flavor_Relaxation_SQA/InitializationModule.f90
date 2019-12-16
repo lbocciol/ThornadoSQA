@@ -183,7 +183,6 @@ CONTAINS
 
         R = NodeCoordinate( MeshX(1), iX1, iNodeX1 )
     
-        WRITE(*,*) R / Kilometer
         ! Interpolate Chimera Data to R and set variables
          
         CALL QuadraticInterpolation1D( R_Ch, D_Ch, nX1, R,  &

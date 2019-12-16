@@ -312,21 +312,19 @@ CONTAINS
         DO iNodeE = 1,nNodesE
           
           iN_E = iN_E + 1
+          dnuHz = MeshE % Width(iE) / Erg
 
-          dE = MeshE % Width(iE) / MeV
-          dnuHz = dE * 1e6 * eV_to_erg / (TwoPi*hbar)
+          nuHz = Enu(iN_E) * 1e6 * eV_to_erg / (TwoPi*hbar)
           
           !This first one hold if f is unitless (i.e. Richers 2019)
-          nuHz = Enu(iN_E) * 1e6 * eV_to_erg / (TwoPi*hbar)
-          pm0(m,iN_E,:,:) = &
-              MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
-              fMatrixOsc(m,iN_E,:,:)), &
-              U0(m,iN_E,:,:)) * &
-              SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3) * &
-              WeightsE(iNodeE)
+          !pm0(m,iN_E,:,:) = &
+          !    MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
+          !    fMatrixOsc(m,iN_E,:,:)), &
+          !    U0(m,iN_E,:,:)) * &
+          !    SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3) * &
+          !    WeightsE(iNodeE)
       
           ! This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
-          dnuHz = MeshE % Width(iE) / Erg
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
               fMatrixOsc(m,iN_E,:,:)), &
