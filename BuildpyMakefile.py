@@ -20,14 +20,17 @@ MyModules = ['InterpolationModule','ReadProfileModule','InitializationModule',\
              'InputOutputRelaxationModule', 'ImplicitSolverModule', 'IntegrationModule', \
              'OscillationsUtilsModule','OscillationsModule']
 f90Compiler = 'mpif90'
+# Name of the python module
 PyModuleName = 'Thor2SQA'
 
+# Directory where you will have your python driver
 PythonWrap_Dir = 'Executables'
+# Directory with the compiled fortran modules
 Executables_dir = Program_Dir + '/' + 'Executables'
 # These are the modules to be "turned" into python modules
 InterfaceNames = ['ThornadoSQAInterfaceModule', 'ProgramStartEndModule']
 
-# These are othr directories you need to specify
+# These are other directories you need to specify
 Thornado_Dir = os.environ['THORNADO_DIR']
 WeakLib_Dir = os.environ['WEAKLIB_DIR']
 HDF5DIR = '/usr/local/hdf5-1.10.5/hdf5'

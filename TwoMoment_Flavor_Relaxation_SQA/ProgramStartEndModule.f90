@@ -71,8 +71,6 @@ MODULE ProgramStartEndModule
     InitializeFields_Relaxation_SQA, &
     InitializeOscillations, &
     nF
-  USE InputOutputRelaxationModule, ONLY: &
-    InitializeFromRestart
 
   IMPLICIT NONE
   PRIVATE
@@ -102,9 +100,8 @@ CONTAINS
   SUBROUTINE ProgramStart( nNodes, nSpecies, nF_in, &
                nX, xL, xR, bcX, swX, ZoomX, &
                nE, eL, eR, bcE, swE, ZoomE, &
-               TimeSlice, t, &
-               Restart_Option, RestartNumber_Option )
-  
+               TimeSlice, t )
+
     INTEGER, INTENT(IN)  :: nNodes, nSpecies, nF_in
     INTEGER, INTENT(IN)  :: nE, bcE, bcX(3), swX(3), swE
     INTEGER, INTENT(IN)  :: nX(3)
@@ -113,24 +110,6 @@ CONTAINS
     REAL(DP), INTENT(IN) :: ZoomX(3), ZoomE
     REAL(DP), INTENT(INOUT) :: TimeSlice, t
     
-    LOGICAL, INTENT(IN), OPTIONAL :: Restart_Option
-    INTEGER, INTENT(IN), OPTIONAL :: RestartNumber_Option
-   
-    LOGICAL :: Restart
-    INTEGER :: RestartNumber
-
-    IF ( PRESENT( Restart_Option ) ) THEN
-      Restart = Restart_Option
-    ELSE
-      Restart = .FALSE.
-    END IF
-
-    IF ( PRESENT( RestartNumber_Option ) ) THEN
-      RestartNumber = RestartNumber_Option
-    ELSE
-      RestartNumber = 0
-    END IF
-
     nF = nF_in
 
     CALL InitializeProgram &
@@ -235,18 +214,7 @@ CONTAINS
   
     CALL InitializeOscillations
     
-    IF( Restart ) THEN
-  
-      CALL InitializeFromRestart( RestartNumber, &
-          t, nX, swX, nE, swE )
-  
-      FileNumber = RestartNumber + 1
-      
-    ELSE
-  
-      t = 0.0_DP
-  
-    END IF
+    t = 0.0_DP
    
     CALL WriteFieldsHDF &
            ( Time = 0.0_DP, &

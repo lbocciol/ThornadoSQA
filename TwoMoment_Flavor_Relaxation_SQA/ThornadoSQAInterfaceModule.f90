@@ -565,7 +565,7 @@ CONTAINS
     Ye  = uAF(iNodeX,iX1,iX2,iX3,iAF_Ye)
     Rho = uPF(iNodeX,iX1,iX2,iX3,iPF_D)
     
-    WRITE(*,*) 'CSI', CSI( R )
+    WRITE(*,*) 'CSI', CSI( R / Kilometer )
   
   END SUBROUTINE Get_Profile
 

@@ -41,3 +41,6 @@ which is then used to initialize the radiation field for the next zone as descri
 At the end, it calculates the opacities as described in that same paper. 
 You'll notice that there some subroutines whose only purpose is to interface with python: 
 GetShockRadius, Get_Profile, OscillationsInterface, InitializeOscInterface, FinalizeOscInterface. 
+
+How to run the code:
+You must create a directory named "Output" in the same directory where "Executables" is. Then, inside "Executables", you need softlinks of EOS and Opacities tables as well as the "CHIMERA" directory that needs to match the path structure in ReadProfileModule.f90 at lines 64-92-119-165-239
