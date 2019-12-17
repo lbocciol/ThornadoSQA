@@ -19,7 +19,7 @@ MODULE InputOutputRelaxationModule
   USE InitializationModule, ONLY: &
     nX_G, nE_G, nM, nF, &
     ChiOsc, EtaOsc, &
-    fMatrixOsc
+    fMatrixfOsc
 
   USE HDF5
 
@@ -39,7 +39,7 @@ MODULE InputOutputRelaxationModule
   CHARACTER(12),  PARAMETER :: &
     OpacitySuffixStd   = 'OpacitiesStd'
   CHARACTER(10),  PARAMETER :: &
-    fMatrixOscSuffix   = 'fMatrixOsc'
+    fMatrixfOscSuffix   = 'fMatrixfOsc'
 
   INTEGER :: FileNumberfOsc = 0  
   INTEGER :: FileNumberOp   = 111111  
@@ -318,7 +318,7 @@ CONTAINS
     FileName &
       = OutputDirectory // '/' // &
         TRIM( ProgramName ) // '_' // &
-        fMatrixOscSuffix // '_' // &
+        fMatrixfOscSuffix // '_' // &
         FileNumberString // '.h5'
 
     CALL H5OPEN_F( HDFERR )
@@ -330,10 +330,10 @@ CONTAINS
     CALL WriteDataset1DHDF &
            ( [ Time ], DatasetName, FILE_ID )
 
-    fToBeWritten(:,:,:,:,1) = REAL ( fMatrixOsc(:,:,:,:) )
-    fToBeWritten(:,:,:,:,2) = AIMAG( fMatrixOsc(:,:,:,:) )
+    fToBeWritten(:,:,:,:,1) = REAL ( fMatrixfOsc(:,:,:,:) )
+    fToBeWritten(:,:,:,:,2) = AIMAG( fMatrixfOsc(:,:,:,:) )
 
-    DatasetName = '/fMatrixOsc'
+    DatasetName = '/fMatrixfOsc'
 
     CALL WriteDataset5DHDF &
           ( fToBeWritten, DatasetName, FILE_ID )

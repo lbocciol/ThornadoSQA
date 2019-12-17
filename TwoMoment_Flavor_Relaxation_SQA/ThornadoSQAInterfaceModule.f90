@@ -39,7 +39,7 @@ MODULE ThornadoSQAInterfaceModule
     iNuX, iNuX_Bar
   USE InitializationModule, ONLY: &
     IdentityC, Energies,  &
-    fMatrixOsc, Psi0_loc, &
+    fMatrixfOsc, Psi0_loc, &
     Psi1_loc, &
     SMatrixOsc, SigmaOsc, &
     nF, nM, nE_G, nX_G,   &
@@ -68,13 +68,15 @@ MODULE ThornadoSQAInterfaceModule
  
   ! These are public in case you want to use python wrapping
   PUBLIC :: OscillationsDriver
-  PUBLIC :: InitializefMatrixOsc
+  PUBLIC :: InitializefMatrixfOsc
   PUBLIC :: ResetSMatrix
   PUBLIC :: CalculateOpacitiesOsc
   PUBLIC :: SetNonDiagonalEl
   PUBLIC :: OscillationsInterface
   PUBLIC :: InitializeOscInterface
   PUBLIC :: FinalizeOscInterface
+  PUBLIC :: InitializeS
+  PUBLIC :: FinalizeS
 
   REAL(DP) :: dt_loc = 1.0d-13
   REAL(DP) :: MaxTDump = 1d-9
@@ -103,6 +105,8 @@ CONTAINS
     InitializeFirstZone = .TRUE.
 
     dt_loc = 1.0d-13 !Seconds
+    
+    CALL InitializeS
     CALL ResetSmatrix
    
     iN_X = 0
@@ -143,16 +147,14 @@ CONTAINS
   
           IF ( InitializeFirstZone ) THEN
             
-            CALL InitializefMatrixOsc( iNodeX,iX1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
+            CALL InitializefMatrixfOsc( iNodeX,iX1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
   
             InitializeFirstZone = .FALSE.
   
           ELSE
   
-            ! iX1-1 because you initialize fMatrixOsc by getting the 
-            ! spectrum coming from the previous zone
-            CALL InitializefMatrixOsc( iNodeX,iX1-1,iX2,iX3, SMatrixTotal(:,:,:,:), nM, nE_G, nF )
-  
+            CALL ResetSmatrix
+
           END IF
   
           dr = MeshX(1) % Width(iX1) / nNodesX(1) / Centimeter
@@ -175,7 +177,7 @@ CONTAINS
     END DO
     END DO
 
-    DEALLOCATE( SMatrixTotal )
+    CALL FinalizeS
 
   END SUBROUTINE SQADriver
 
@@ -192,7 +194,7 @@ CONTAINS
 
     !IF (tOsc <= MaxTDump ) CALL WritefOscillations( tOsc )
     
-    f = fMatrixOsc
+    f = fMatrixfOsc
     S = SMatrixOsc
 
   END SUBROUTINE OscillationsInterface
@@ -295,7 +297,7 @@ CONTAINS
 
   END SUBROUTINE IntegrationDriver
 
-  SUBROUTINE InitializefMatrixOsc( iNodeX,iX1,iX2,iX3, STotal, nMi, nEi, nFi )
+  SUBROUTINE InitializefMatrixfOsc( iNodeX,iX1,iX2,iX3, STotal, nMi, nEi, nFi )
 
     INTEGER, INTENT(IN) :: iNodeX,iX1,iX2,iX3, nMi, nEi, nFi
     COMPLEX(KIND=8), INTENT(IN) :: STotal(nMi,nEi,nFi,nFi)
@@ -486,20 +488,18 @@ CONTAINS
     DO m = 1,nM
       DO iN_E = 1,nE_G
 
-        fMatrixOsc(m,iN_E,:,:) = MATMUL( MATMUL( STotal(m,iN_E,:,:), &
+        fMatrixfOsc(m,iN_E,:,:) = MATMUL( MATMUL( STotal(m,iN_E,:,:), &
           fPinched(m,iN_E,:,:) ), CONJG(TRANSPOSE( STotal(m,iN_E,:,:) )) )
         
       END DO
     END DO
 
-  END SUBROUTINE InitializefMatrixOsc
+  END SUBROUTINE InitializefMatrixfOsc
 
 
   SUBROUTINE ResetSMatrix
 
     INTEGER :: m, iN_E
-
-    ALLOCATE( SMatrixTotal(nM,nE_G,nF,nF) )
 
     DO m = 1,nM
       DO iN_E = 1,nE_G
@@ -525,19 +525,32 @@ CONTAINS
     REAL(DP) :: TransProb(nE_G)
     INTEGER  :: iE, iN_E, m, iNode, iNodeE, iS, iCR
 
-    DO iN_E = 1,nE_G
-      DO m = 1,nM
+    DO m = 1,nM
+      DO iN_E = 1,nE_G
         
         TransProb(iN_E) = One - MIN( See2(m,iN_E) , One )
         TransProb(iN_E) = 1.0d-3
         SigmaOsc(iN_E,iN_X,m) = TransProb(iN_E) * SpeedOfLightCGS / ZoneWidth * &
             One / Second !convert to code units
     
-        WRITE(*,*) iN_E, See2(m,iN_E), REAL(fMatrixOsc(m,iN_E,1,1))
+        WRITE(*,*) iN_E, See2(m,iN_E), REAL(fMatrixfOsc(m,iN_E,1,1))
+      
       END DO
     END DO
     
   END SUBROUTINE CalculateOpacitiesOsc
+
+  SUBROUTINE InitializeS
+
+    ALLOCATE( SMatrixTotal(nM,nE_G,nF,nF) )
+  
+  END SUBROUTINE InitializeS
+
+  SUBROUTINE FinalizeS
+
+    DEALLOCATE( SMatrixTotal )
+
+  END SUBROUTINE FinalizeS
 
   SUBROUTINE GetShockRadius( R_Shock_Loc)
 

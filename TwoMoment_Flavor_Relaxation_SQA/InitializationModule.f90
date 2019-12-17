@@ -75,7 +75,7 @@ MODULE InitializationModule
   COMPLEX(DP), ALLOCATABLE, PUBLIC :: AV(:,:,:), CV(:,:,:,:)
   COMPLEX(DP), ALLOCATABLE, PUBLIC :: Hvf(:,:,:,:) !vacuum hamiltonian in flavor basis
   COMPLEX(DP),              PUBLIC :: PMNS(2,2)
-  COMPLEX(DP), ALLOCATABLE, PUBLIC :: fMatrixOsc(:,:,:,:)
+  COMPLEX(DP), ALLOCATABLE, PUBLIC :: fMatrixfOsc(:,:,:,:)
   COMPLEX(DP), ALLOCATABLE, PUBLIC :: SMatrixOsc(:,:,:,:)
 
   REAL(DP),    ALLOCATABLE, PUBLIC :: Energies(:)
@@ -458,7 +458,7 @@ CONTAINS
 
     INTEGER :: k
 
-    ALLOCATE( fMatrixOsc(nM,nE_G,nF,nF) )
+    ALLOCATE( fMatrixfOsc(nM,nE_G,nF,nF) )
     ALLOCATE( SMatrixOsc(nM,nE_G,nF,nF) )
     ALLOCATE( Enu(nE_G) )
     ALLOCATE( Psi0_loc(nE_G,nSpecies) )

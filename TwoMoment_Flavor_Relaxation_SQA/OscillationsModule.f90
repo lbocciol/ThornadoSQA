@@ -18,7 +18,7 @@ MODULE OscillationsModule
   USE InitializationModule, ONLY: &
     YIdentity, Hvf, &
     Enu, &
-    fMatrixOsc, &
+    fMatrixfOsc, &
     SMatrixOsc, &
     nF, nM, nY, nS, nE_G
   USE OscillationsUtilsModule, ONLY: &
@@ -167,8 +167,8 @@ CONTAINS
         SNew = MATMUL(SMSW,SSI)
         SMatrixOsc(m,iN_E,:,:) = MATMUL(MATMUL(U0(m,iN_E,:,:),SNew), &
                       CONJG(TRANSPOSE(U0(m,iN_E,:,:))))
-        fMatrixOsc(m,iN_E,:,:) =  &
-            MATMUL(MATMUL(SMatrixOsc(m,iN_E,:,:),fMatrixOsc(m,iN_E,:,:)), &
+        fMatrixfOsc(m,iN_E,:,:) =  &
+            MATMUL(MATMUL(SMatrixOsc(m,iN_E,:,:),fMatrixfOsc(m,iN_E,:,:)), &
                       CONJG(TRANSPOSE((SMatrixOsc(m,iN_E,:,:)))))
         Y(m,iN_E,:,:) = YIdentity !not sure it's necessary
 
@@ -320,7 +320,7 @@ CONTAINS
           !This first one hold if f is unitless (i.e. Richers 2019)
           !pm0(m,iN_E,:,:) = &
           !    MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
-          !    fMatrixOsc(m,iN_E,:,:)), &
+          !    fMatrixfOsc(m,iN_E,:,:)), &
           !    U0(m,iN_E,:,:)) * &
           !    SQRT(2.0d0)*GF*4.0d0*pi*nuHz**2*dnuHz/(clite**3) * &
           !    WeightsE(iNodeE)
@@ -328,7 +328,7 @@ CONTAINS
           ! This second one holds if f has units of erg/cm^3 (i.e. Stapleford 2019)
           pm0(m,iN_E,:,:) = &
               MATMUL(MATMUL(CONJG(TRANSPOSE(U0(m,iN_E,:,:))), &
-              fMatrixOsc(m,iN_E,:,:)), &
+              fMatrixfOsc(m,iN_E,:,:)), &
               U0(m,iN_E,:,:)) * &
               SQRT(2.0d0)*GF*dE * &
               WeightsE(iNodeE)
@@ -355,7 +355,7 @@ CONTAINS
     DO m = 1,nM
       DO iN_E = 1,nE_G
 
-         k0(m,iN_E,:)   = Eigenvalues       ( Hf(m,iN_E,:,:) )
+         k0(m,iN_E,:)   = Eigenvalues      ( Hf(m,iN_E,:,:) )
          U0(m,iN_E,:,:) = EigenvectorMatrix( Hf(m,iN_E,:,:), k0(m,iN_E,:), iN_E )
 
          IF(m == 2) U0(m,iN_E,:,:) = CONJG( U0(m,iN_E,:,:) )

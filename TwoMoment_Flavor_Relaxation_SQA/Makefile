@@ -28,7 +28,7 @@ Relaxation_SQA: \
     OscillationsModule.o \
     ThornadoSQAInterfaceModule.o \
 	Relaxation_SQA.o
-	$(FLINKER) -fPIC $(FLAGS) -o Relaxation_SQA_$(MACHINE) \
+	$(FLINKER) $(FLAGS) -o Relaxation_SQA_$(MACHINE) \
 	$(weaklib) \
 	$(thornado) \
 	InterpolationModule.o \

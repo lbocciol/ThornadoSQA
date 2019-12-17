@@ -81,7 +81,7 @@ PROGRAM Relaxation_SQA
   USE InitializationModule, ONLY: &
     InitializeFields_Relaxation_SQA, &
     InitializeOscillations, &
-    fMatrixOsc, SMatrixOsc, &
+    fMatrixfOsc, SMatrixOsc, &
     nF, nE_G, nX_G, &
     R_Shock
   USE ThornadoSQAInterfaceModule, ONLY: &
@@ -110,7 +110,7 @@ PROGRAM Relaxation_SQA
   nSpecies = 4
   nF = 2
 
-  nX  = [ 128, 1, 1 ]
+  nX  = [ 512, 1, 1 ]
   xL  = [ 0.0d0 * Kilometer, 0.0_DP, 0.0_DP ]
   xR  = [ 500.0d0 * Kilometer, Pi,     TwoPi  ]
   bcX = [ 32, 0, 0 ]

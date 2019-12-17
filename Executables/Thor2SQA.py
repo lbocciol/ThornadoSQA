@@ -109,9 +109,10 @@ while t < t_end:
 
       DoOscillations = False
       InitializeFirstZone = True
-      
+    
+      T2SQA.initializes()
       T2SQA.resetsmatrix()
-        
+    
       STotal = np.array([[ np.identity(nF, dtype=np.complex128) for iN_E in range(nE_G) ] for iM in range(nM)])
       iX = 0
       for iX1 in range(nX[0]):
@@ -132,14 +133,13 @@ while t < t_end:
               if DoOscillations:
                
                 if InitializeFirstZone:                
-                  T2SQA.initializefmatrixosc( iNodeX+1,iX1+1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
+                  T2SQA.initializefmatrixfosc( iNodeX+1,iX1+1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
                   InitializeFirstZone = False
         
                 else:
-                  # iX1-1 because you initialize fMatrixOsc by getting the 
-                  # spectrum coming from the previous zone
-                  T2SQA.initializefmatrixosc( iNodeX+1,iX1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
-        
+                  
+                  T2SQA.resetsmatrix()
+
                 dr = dR[iX1,iX2,iX3] * 1.0e5 / nNodes  
                 
                 tZone = dr / SpeedOfLightCGS 
@@ -173,7 +173,7 @@ while t < t_end:
                 
                 # -------------------------------------
                 # RESTART OSCILLATIONS FOR ~100 PERIODS
-                T2SQA.initializefmatrixosc( iNodeX+1,iX1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
+                T2SQA.initializefmatrixfosc( iNodeX+1,iX1,iX2+1,iX3+1, STotal, nM, nE_G, nF )
 
                 T2SQA.initializeoscinterface( Rho[iNodeX,iX1,iX2,iX3], Ye[iNodeX,iX1,iX2,iX3])
 
@@ -239,7 +239,9 @@ while t < t_end:
                 T2SQA.calculateopacitiesosc( dr, iX, iNodeX+1, iX1+1, iX2+1, iX3+1, np.abs(STotal[:,:,0,0])**2, nM, nE_G )
         
                 print( 'Done with Zone', iNodeX+1, iX1+1, iX2+1, iX3+1 )
-                    
+      
+      T2SQA.finalizes()
+
 #---------------------------------------------------------
     Timers.start()
     T2SQA.integrationdriver( dt )
